@@ -1,0 +1,17 @@
+[workspace]
+members = [
+    "cli",
+    "registry",
+    "transforms/json-filter",
+    "transforms/timestamp-enricher",
+    "transforms/pii-redactor",
+    "transforms/schema-validator",
+    "transforms/field-router",
+]
+resolver = "2"
+
+[workspace.package]
+version = "0.1.0"
+edition = "2021"
+license = "Apache-2.0"
+repository = "https://github.com/streamlinelabs/streamline-marketplace"

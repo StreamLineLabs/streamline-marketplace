@@ -1,0 +1,33 @@
+# Rust build artifacts
+/target/
+**/target/
+
+# Cargo lock for workspace (keep for binaries, ignore for libraries)
+# Since we have a CLI binary, keep Cargo.lock
+# Cargo.lock
+
+# Editor files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment files
+.env
+.env.local
+
+# WASM build output
+*.wasm
+!registry/**/*.wasm
+
+# Downloaded transforms cache
+.cache/
+
+# Registry server runtime data (keep seed transforms.json)
+registry/data/transforms.json
+registry/data/wasm/
