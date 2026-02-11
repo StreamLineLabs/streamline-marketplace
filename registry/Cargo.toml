@@ -1,0 +1,22 @@
+[package]
+name = "streamline-marketplace-registry"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "HTTP registry server for the Streamline WASM Transform Marketplace"
+
+[[bin]]
+name = "streamline-registry"
+path = "src/main.rs"
+
+[dependencies]
+axum = { version = "0.7", features = ["multipart"] }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+tower-http = { version = "0.5", features = ["cors", "trace"] }
+tracing = "0.1"
+tracing-subscriber = { version = "0.3", features = ["env-filter"] }
+sha2 = "0.10"
+hex = "0.4"
+uuid = { version = "1", features = ["v4"] }

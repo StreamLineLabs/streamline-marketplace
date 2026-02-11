@@ -1,0 +1,355 @@
+[
+  {
+    "name": "json-filter",
+    "version": "0.1.0",
+    "description": "Filter messages by JSON field values. Supports equality, comparison, regex, and existence operators on any JSON path.",
+    "author": "StreamlineLabs",
+    "downloads": 1250,
+    "checksum": "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+    "categories": ["filtering"],
+    "min_streamline_version": "0.1.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/json_filter.wasm",
+    "input_format": "json",
+    "output_format": "json",
+    "tags": ["json", "filter", "conditional", "routing"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/json-filter",
+    "config_schema": {
+      "field": {
+        "type": "string",
+        "required": true,
+        "description": "JSON field path to evaluate (dot-notation supported, e.g. 'user.status')"
+      },
+      "operator": {
+        "type": "string",
+        "required": true,
+        "description": "Comparison operator: eq, neq, gt, lt, gte, lte, regex, exists, not_exists, contains",
+        "default": "eq"
+      },
+      "value": {
+        "type": "string",
+        "required": false,
+        "description": "Value to compare against (not required for exists/not_exists operators)"
+      }
+    }
+  },
+  {
+    "name": "json-transform",
+    "version": "0.1.0",
+    "description": "Transform JSON structure with field renaming, flattening, nested field extraction, and type coercion.",
+    "author": "StreamlineLabs",
+    "downloads": 980,
+    "checksum": "sha256:b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+    "categories": ["format-conversion"],
+    "min_streamline_version": "0.1.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/json_transform.wasm",
+    "input_format": "json",
+    "output_format": "json",
+    "tags": ["json", "transform", "rename", "flatten", "restructure"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/json-transform",
+    "config_schema": {
+      "operations": {
+        "type": "array",
+        "required": true,
+        "description": "Array of transform operations: [{\"op\": \"rename\", \"from\": \"old\", \"to\": \"new\"}, {\"op\": \"remove\", \"field\": \"unwanted\"}]"
+      }
+    }
+  },
+  {
+    "name": "csv-to-json",
+    "version": "0.1.0",
+    "description": "Convert CSV-formatted messages to JSON objects. Supports custom delimiters, header detection, and type inference.",
+    "author": "StreamlineLabs",
+    "downloads": 720,
+    "checksum": "sha256:c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+    "categories": ["format-conversion"],
+    "min_streamline_version": "0.1.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/csv_to_json.wasm",
+    "input_format": "csv",
+    "output_format": "json",
+    "tags": ["csv", "json", "convert", "parse", "etl"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/csv-to-json",
+    "config_schema": {
+      "delimiter": {
+        "type": "string",
+        "required": false,
+        "description": "Field delimiter character",
+        "default": ","
+      },
+      "headers": {
+        "type": "array",
+        "required": false,
+        "description": "Column headers (if not present in first row)"
+      },
+      "has_header_row": {
+        "type": "boolean",
+        "required": false,
+        "description": "Whether the first row contains column headers",
+        "default": true
+      }
+    }
+  },
+  {
+    "name": "json-to-avro",
+    "version": "0.1.0",
+    "description": "Convert JSON messages to Avro binary format using a provided schema. Integrates with Streamline Schema Registry.",
+    "author": "StreamlineLabs",
+    "downloads": 540,
+    "checksum": "sha256:d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
+    "categories": ["format-conversion"],
+    "min_streamline_version": "0.1.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/json_to_avro.wasm",
+    "input_format": "json",
+    "output_format": "avro",
+    "tags": ["json", "avro", "schema", "serialization", "schema-registry"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/json-to-avro",
+    "config_schema": {
+      "schema": {
+        "type": "string",
+        "required": true,
+        "description": "Avro schema as JSON string, or a Schema Registry subject name prefixed with 'sr://'"
+      }
+    }
+  },
+  {
+    "name": "timestamp-enricher",
+    "version": "0.1.0",
+    "description": "Add processing timestamps and time-related metadata to JSON messages. Supports multiple timestamp formats and timezone conversion.",
+    "author": "StreamlineLabs",
+    "downloads": 1100,
+    "checksum": "sha256:e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
+    "categories": ["enrichment"],
+    "min_streamline_version": "0.1.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/timestamp_enricher.wasm",
+    "input_format": "json",
+    "output_format": "json",
+    "tags": ["timestamp", "enrich", "time", "metadata", "processing"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/timestamp-enricher",
+    "config_schema": {
+      "field_name": {
+        "type": "string",
+        "required": false,
+        "description": "Name of the timestamp field to add",
+        "default": "_processed_at"
+      },
+      "format": {
+        "type": "string",
+        "required": false,
+        "description": "Timestamp format: iso8601, epoch_ms, epoch_s, rfc2822",
+        "default": "iso8601"
+      },
+      "timezone": {
+        "type": "string",
+        "required": false,
+        "description": "Timezone for the timestamp (e.g. UTC, America/New_York)",
+        "default": "UTC"
+      }
+    }
+  },
+  {
+    "name": "pii-redactor",
+    "version": "0.1.0",
+    "description": "Detect and redact personally identifiable information (PII) from JSON messages using regex patterns. Supports emails, phone numbers, SSNs, credit cards, and custom patterns.",
+    "author": "StreamlineLabs",
+    "downloads": 890,
+    "checksum": "sha256:f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1",
+    "categories": ["security"],
+    "min_streamline_version": "0.1.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/pii_redactor.wasm",
+    "input_format": "json",
+    "output_format": "json",
+    "tags": ["pii", "redact", "privacy", "gdpr", "compliance", "security"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/pii-redactor",
+    "config_schema": {
+      "patterns": {
+        "type": "array",
+        "required": false,
+        "description": "PII types to redact: email, phone, ssn, credit_card, ip_address. Default: all.",
+        "default": ["email", "phone", "ssn"]
+      },
+      "replacement": {
+        "type": "string",
+        "required": false,
+        "description": "Replacement string for redacted values",
+        "default": "***REDACTED***"
+      },
+      "fields": {
+        "type": "array",
+        "required": false,
+        "description": "Specific fields to scan (empty = scan all string fields)"
+      }
+    }
+  },
+  {
+    "name": "schema-validator",
+    "version": "0.1.0",
+    "description": "Validate JSON messages against a JSON Schema. Invalid messages are dropped or routed to a dead-letter topic.",
+    "author": "StreamlineLabs",
+    "downloads": 670,
+    "checksum": "sha256:a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3",
+    "categories": ["filtering", "analytics"],
+    "min_streamline_version": "0.1.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/schema_validator.wasm",
+    "input_format": "json",
+    "output_format": "json",
+    "tags": ["schema", "validation", "json-schema", "quality", "data-quality"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/schema-validator",
+    "config_schema": {
+      "schema": {
+        "type": "string",
+        "required": true,
+        "description": "JSON Schema as a string, or a URL to fetch the schema from"
+      },
+      "on_invalid": {
+        "type": "string",
+        "required": false,
+        "description": "Action for invalid messages: drop, route_dlq, tag",
+        "default": "drop"
+      }
+    }
+  },
+  {
+    "name": "field-router",
+    "version": "0.1.0",
+    "description": "Route messages to different output topics based on the value of a configurable JSON field. Supports exact match, regex, and range-based routing rules.",
+    "author": "StreamlineLabs",
+    "downloads": 430,
+    "checksum": "sha256:b3c4d5e6f7a1b3c4d5e6f7a1b3c4d5e6f7a1b3c4d5e6f7a1b3c4d5e6f7a1b3c4",
+    "categories": ["routing"],
+    "min_streamline_version": "0.1.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/field_router.wasm",
+    "input_format": "json",
+    "output_format": "json",
+    "tags": ["routing", "field", "topic", "conditional", "fanout"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/field-router",
+    "config_schema": {
+      "field": {
+        "type": "string",
+        "required": true,
+        "description": "JSON field path to evaluate for routing (dot-notation supported)"
+      },
+      "routes": {
+        "type": "array",
+        "required": true,
+        "description": "Array of routing rules: [{\"match\": \"error\", \"topic\": \"errors\"}, {\"match\": \"warn\", \"topic\": \"warnings\"}]"
+      },
+      "default_topic": {
+        "type": "string",
+        "required": false,
+        "description": "Default topic for messages that match no rules (if omitted, unmatched messages are dropped)"
+      }
+    }
+  },
+  {
+    "name": "deduplicator",
+    "version": "0.1.0",
+    "description": "Remove duplicate messages based on a configurable deduplication key. Uses a time-windowed bloom filter for memory efficiency.",
+    "author": "StreamlineLabs",
+    "downloads": 560,
+    "checksum": "sha256:c4d5e6f7a1b2c4d5e6f7a1b2c4d5e6f7a1b2c4d5e6f7a1b2c4d5e6f7a1b2c4d5",
+    "categories": ["filtering"],
+    "min_streamline_version": "0.1.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/deduplicator.wasm",
+    "input_format": "json",
+    "output_format": "json",
+    "tags": ["dedup", "deduplicate", "unique", "filter", "idempotent"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/deduplicator",
+    "config_schema": {
+      "key_field": {
+        "type": "string",
+        "required": true,
+        "description": "JSON field to use as the deduplication key"
+      },
+      "window_seconds": {
+        "type": "integer",
+        "required": false,
+        "description": "Time window in seconds for deduplication (older entries are forgotten)",
+        "default": 300
+      },
+      "max_entries": {
+        "type": "integer",
+        "required": false,
+        "description": "Maximum number of entries to track",
+        "default": 100000
+      }
+    }
+  },
+  {
+    "name": "rate-limiter",
+    "version": "0.1.0",
+    "description": "Rate-limit message throughput using a token bucket algorithm. Excess messages are dropped or delayed.",
+    "author": "StreamlineLabs",
+    "downloads": 380,
+    "checksum": "sha256:d5e6f7a1b2c3d5e6f7a1b2c3d5e6f7a1b2c3d5e6f7a1b2c3d5e6f7a1b2c3d5e6",
+    "categories": ["filtering", "analytics"],
+    "min_streamline_version": "0.1.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/rate_limiter.wasm",
+    "input_format": "any",
+    "output_format": "any",
+    "tags": ["rate-limit", "throttle", "backpressure", "flow-control"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/rate-limiter",
+    "config_schema": {
+      "max_rate": {
+        "type": "integer",
+        "required": true,
+        "description": "Maximum messages per second"
+      },
+      "burst_size": {
+        "type": "integer",
+        "required": false,
+        "description": "Maximum burst size (token bucket capacity)",
+        "default": 100
+      },
+      "on_limit": {
+        "type": "string",
+        "required": false,
+        "description": "Action when rate is exceeded: drop, delay",
+        "default": "drop"
+      }
+    }
+  },
+  {
+    "name": "geo-enricher",
+    "version": "0.1.0",
+    "description": "Enrich JSON messages with geolocation data by resolving IP addresses to country, city, and coordinates using an embedded GeoIP database.",
+    "author": "StreamlineLabs",
+    "downloads": 310,
+    "checksum": "sha256:e6f7a1b2c3d4e6f7a1b2c3d4e6f7a1b2c3d4e6f7a1b2c3d4e6f7a1b2c3d4e6f7",
+    "categories": ["enrichment"],
+    "min_streamline_version": "0.1.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/geo_enricher.wasm",
+    "input_format": "json",
+    "output_format": "json",
+    "tags": ["geo", "geolocation", "ip", "geoip", "enrich", "location"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/geo-enricher",
+    "config_schema": {
+      "ip_field": {
+        "type": "string",
+        "required": true,
+        "description": "JSON field containing the IP address to resolve"
+      },
+      "output_field": {
+        "type": "string",
+        "required": false,
+        "description": "JSON field to write geolocation data into",
+        "default": "_geo"
+      },
+      "include_fields": {
+        "type": "array",
+        "required": false,
+        "description": "Which geo fields to include: country, city, region, latitude, longitude, timezone",
+        "default": ["country", "city", "latitude", "longitude"]
+      }
+    }
+  }
+]
