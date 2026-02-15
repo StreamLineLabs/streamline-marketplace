@@ -1,0 +1,29 @@
+[transform]
+name = "field-router"
+version = "0.1.0"
+description = "Route messages to different output topics based on the value of a configurable JSON field. Supports exact match, regex, and range-based routing rules."
+author = "StreamlineLabs"
+license = "Apache-2.0"
+repository = "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/field-router"
+min_streamline_version = "0.1.0"
+categories = ["route"]
+tags = ["routing", "field", "topic", "conditional", "fanout"]
+
+[io]
+input_format = "json"
+output_format = "json"
+
+[config.field]
+type = "string"
+required = true
+description = "JSON field path to evaluate for routing (dot-notation supported)"
+
+[config.routes]
+type = "array"
+required = true
+description = "Array of routing rules: [{\"match\": \"error\", \"topic\": \"errors\"}, {\"match\": \"warn\", \"topic\": \"warnings\"}]"
+
+[config.default_topic]
+type = "string"
+required = false
+description = "Default topic for messages that match no rules (if omitted, unmatched messages are dropped)"

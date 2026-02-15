@@ -1,0 +1,12 @@
+[package]
+name = "schema-validator"
+version.workspace = true
+edition.workspace = true
+license.workspace = true
+description = "WASM transform that validates JSON messages against a JSON Schema"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+serde_json = "1.0"

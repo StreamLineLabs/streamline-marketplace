@@ -1,0 +1,25 @@
+[transform]
+name = "schema-validator"
+version = "0.1.0"
+description = "Validate JSON messages against a JSON Schema. Invalid messages are dropped or routed to a dead-letter topic."
+author = "StreamlineLabs"
+license = "Apache-2.0"
+repository = "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/schema-validator"
+min_streamline_version = "0.1.0"
+categories = ["filter"]
+tags = ["schema", "validation", "json-schema", "quality", "data-quality"]
+
+[io]
+input_format = "json"
+output_format = "json"
+
+[config.schema]
+type = "string"
+required = true
+description = "JSON Schema as a string, or a URL to fetch the schema from"
+
+[config.on_invalid]
+type = "string"
+required = false
+description = "Action for invalid messages: drop, route_dlq, tag"
+default = "drop"
