@@ -1,0 +1,30 @@
+[transform]
+name = "json-filter"
+version = "0.1.0"
+description = "Filter messages by JSON field values. Supports equality, comparison, regex, and existence operators on any JSON path."
+author = "StreamlineLabs"
+license = "Apache-2.0"
+repository = "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/json-filter"
+min_streamline_version = "0.1.0"
+categories = ["filter"]
+tags = ["json", "filter", "conditional", "routing"]
+
+[io]
+input_format = "json"
+output_format = "json"
+
+[config.field]
+type = "string"
+required = true
+description = "JSON field path to evaluate (dot-notation supported, e.g. 'user.status')"
+
+[config.operator]
+type = "string"
+required = true
+description = "Comparison operator: eq, neq, gt, lt, gte, lte, regex, exists, not_exists, contains"
+default = "eq"
+
+[config.value]
+type = "string"
+required = false
+description = "Value to compare against (not required for exists/not_exists operators)"

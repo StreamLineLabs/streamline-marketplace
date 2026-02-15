@@ -1,0 +1,32 @@
+[transform]
+name = "timestamp-enricher"
+version = "0.1.0"
+description = "Add processing timestamps and time-related metadata to JSON messages. Supports multiple timestamp formats and timezone conversion."
+author = "StreamlineLabs"
+license = "Apache-2.0"
+repository = "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/timestamp-enricher"
+min_streamline_version = "0.1.0"
+categories = ["enrich"]
+tags = ["timestamp", "enrich", "time", "metadata", "processing"]
+
+[io]
+input_format = "json"
+output_format = "json"
+
+[config.field_name]
+type = "string"
+required = false
+description = "Name of the timestamp field to add"
+default = "_processed_at"
+
+[config.format]
+type = "string"
+required = false
+description = "Timestamp format: iso8601, epoch_ms, epoch_s, rfc2822"
+default = "iso8601"
+
+[config.timezone]
+type = "string"
+required = false
+description = "Timezone for the timestamp (e.g. UTC, America/New_York)"
+default = "UTC"
