@@ -1,0 +1,31 @@
+[transform]
+name = "pii-redactor"
+version = "0.1.0"
+description = "Detect and redact personally identifiable information (PII) from JSON messages using regex patterns. Supports emails, phone numbers, SSNs, credit cards, and custom patterns."
+author = "StreamlineLabs"
+license = "Apache-2.0"
+repository = "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/pii-redactor"
+min_streamline_version = "0.1.0"
+categories = ["filter", "enrich"]
+tags = ["pii", "redact", "privacy", "gdpr", "compliance", "security"]
+
+[io]
+input_format = "json"
+output_format = "json"
+
+[config.patterns]
+type = "array"
+required = false
+description = "PII types to redact: email, phone, ssn, credit_card, ip_address. Default: all."
+default = ["email", "phone", "ssn"]
+
+[config.replacement]
+type = "string"
+required = false
+description = "Replacement string for redacted values"
+default = "***REDACTED***"
+
+[config.fields]
+type = "array"
+required = false
+description = "Specific fields to scan (empty = scan all string fields)"
