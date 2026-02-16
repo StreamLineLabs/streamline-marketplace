@@ -1,0 +1,205 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+  release:
+    types: [published]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  check:
+    name: Check & Lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action/setup@v1
+        with:
+          toolchain: stable
+          targets: wasm32-wasip1
+          components: clippy, rustfmt
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Check formatting
+        run: cargo fmt --all -- --check
+
+      - name: Clippy (CLI - native)
+        run: cargo clippy -p streamline-marketplace-cli --all-targets -- -D warnings
+
+      - name: Clippy (transforms - wasm target)
+        run: |
+          cargo clippy -p json-filter --target wasm32-wasip1 -- -D warnings
+          cargo clippy -p timestamp-enricher --target wasm32-wasip1 -- -D warnings
+          cargo clippy -p pii-redactor --target wasm32-wasip1 -- -D warnings
+          cargo clippy -p schema-validator --target wasm32-wasip1 -- -D warnings
+          cargo clippy -p field-router --target wasm32-wasip1 -- -D warnings
+
+  test:
+    name: Test
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action/setup@v1
+        with:
+          toolchain: stable
+
+      - name: Run tests (CLI)
+        run: cargo test -p streamline-marketplace-cli
+
+      - name: Run tests (transforms)
+        run: |
+          cargo test -p json-filter
+          cargo test -p timestamp-enricher
+          cargo test -p pii-redactor
+          cargo test -p schema-validator
+          cargo test -p field-router
+
+      - name: Validate registry
+        run: |
+          python3 -c "
+          import json, sys
+          with open('registry/transforms.json') as f:
+              data = json.load(f)
+          valid_cats = {'filtering','enrichment','routing','security','analytics','format-conversion'}
+          required = ['name','version','description','author','wasm_url','categories','min_streamline_version','checksum']
+          for entry in data:
+              for field in required:
+                  if field not in entry or not entry[field]:
+                      print(f'ERROR: {entry.get(\"name\",\"?\")} missing {field}', file=sys.stderr)
+                      sys.exit(1)
+              for cat in entry['categories']:
+                  if cat not in valid_cats:
+                      print(f'ERROR: {entry[\"name\"]} invalid category {cat}', file=sys.stderr)
+                      sys.exit(1)
+          print(f'Registry valid: {len(data)} transforms')
+          "
+
+  build-transforms:
+    name: Build WASM Transforms
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action/setup@v1
+        with:
+          toolchain: stable
+          targets: wasm32-wasip1
+
+      - name: Cache cargo registry
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            target
+          key: ${{ runner.os }}-cargo-wasm-${{ hashFiles('**/Cargo.lock') }}
+
+      - name: Build json-filter
+        run: cargo build -p json-filter --target wasm32-wasip1 --release
+
+      - name: Build timestamp-enricher
+        run: cargo build -p timestamp-enricher --target wasm32-wasip1 --release
+
+      - name: Build pii-redactor
+        run: cargo build -p pii-redactor --target wasm32-wasip1 --release
+
+      - name: Build schema-validator
+        run: cargo build -p schema-validator --target wasm32-wasip1 --release
+
+      - name: Build field-router
+        run: cargo build -p field-router --target wasm32-wasip1 --release
+
+      - name: Collect WASM artifacts
+        run: |
+          mkdir -p artifacts
+          cp target/wasm32-wasip1/release/json_filter.wasm artifacts/
+          cp target/wasm32-wasip1/release/timestamp_enricher.wasm artifacts/
+          cp target/wasm32-wasip1/release/pii_redactor.wasm artifacts/
+          cp target/wasm32-wasip1/release/schema_validator.wasm artifacts/
+          cp target/wasm32-wasip1/release/field_router.wasm artifacts/
+          ls -lh artifacts/
+
+      - name: Upload WASM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: wasm-transforms
+          path: artifacts/*.wasm
+
+  build-cli:
+    name: Build CLI
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        include:
+          - os: ubuntu-latest
+            target: x86_64-unknown-linux-gnu
+            artifact: streamline-marketplace
+          - os: macos-latest
+            target: x86_64-apple-darwin
+            artifact: streamline-marketplace
+          - os: macos-latest
+            target: aarch64-apple-darwin
+            artifact: streamline-marketplace
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install Rust
+        uses: dtolnay/rust-action/setup@v1
+        with:
+          toolchain: stable
+          targets: ${{ matrix.target }}
+
+      - name: Build CLI
+        run: cargo build -p streamline-marketplace-cli --release --target ${{ matrix.target }}
+
+      - name: Upload CLI artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cli-${{ matrix.target }}
+          path: target/${{ matrix.target }}/release/${{ matrix.artifact }}
+
+  release:
+    name: Release Assets
+    needs: [check, test, build-transforms, build-cli]
+    if: github.event_name == 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Download WASM artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: wasm-transforms
+          path: wasm/
+
+      - name: Download CLI artifacts
+        uses: actions/download-artifact@v4
+        with:
+          pattern: cli-*
+          path: cli/
+          merge-multiple: true
+
+      - name: Upload release assets
+        uses: softprops/action-gh-release@v2
+        with:
+          files: |
+            wasm/*.wasm
+            cli/streamline-marketplace*
