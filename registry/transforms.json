@@ -351,5 +351,158 @@
         "default": ["country", "city", "latitude", "longitude"]
       }
     }
+  },
+  {
+    "name": "ai-classifier",
+    "version": "0.1.0",
+    "description": "Classify messages using LLM providers (OpenAI, Anthropic, Ollama). Adds a classification label and confidence score to each message based on configurable categories.",
+    "author": "StreamlineLabs",
+    "downloads": 0,
+    "checksum": "sha256:pending",
+    "categories": ["ai", "classification", "enrichment"],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/ai_classifier.wasm",
+    "input_format": "json",
+    "output_format": "json",
+    "tags": ["ai", "llm", "classification", "machine-learning", "openai", "anthropic"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/ai-classifier",
+    "config_schema": {
+      "provider": {
+        "type": "string",
+        "required": true,
+        "description": "AI provider: openai, anthropic, ollama",
+        "default": "openai"
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "description": "Model name (e.g., gpt-4o-mini, claude-3-haiku, llama3)",
+        "default": "gpt-4o-mini"
+      },
+      "categories": {
+        "type": "array",
+        "required": true,
+        "description": "List of classification categories"
+      },
+      "field": {
+        "type": "string",
+        "required": false,
+        "description": "JSON field to classify (default: entire value)",
+        "default": "value"
+      },
+      "output_field": {
+        "type": "string",
+        "required": false,
+        "description": "Field name for the classification result",
+        "default": "_classification"
+      },
+      "api_key_env": {
+        "type": "string",
+        "required": false,
+        "description": "Environment variable containing the API key",
+        "default": "OPENAI_API_KEY"
+      }
+    }
+  },
+  {
+    "name": "ai-summarizer",
+    "version": "0.1.0",
+    "description": "Summarize message content using LLM providers. Useful for reducing verbose log entries, compacting event descriptions, or generating abstracts from long-form content.",
+    "author": "StreamlineLabs",
+    "downloads": 0,
+    "checksum": "sha256:pending",
+    "categories": ["ai", "summarization", "enrichment"],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/ai_summarizer.wasm",
+    "input_format": "json",
+    "output_format": "json",
+    "tags": ["ai", "llm", "summarization", "nlp", "text"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/ai-summarizer",
+    "config_schema": {
+      "provider": {
+        "type": "string",
+        "required": true,
+        "description": "AI provider: openai, anthropic, ollama",
+        "default": "openai"
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "default": "gpt-4o-mini"
+      },
+      "field": {
+        "type": "string",
+        "required": false,
+        "description": "JSON field containing text to summarize",
+        "default": "value"
+      },
+      "output_field": {
+        "type": "string",
+        "required": false,
+        "default": "_summary"
+      },
+      "max_tokens": {
+        "type": "integer",
+        "required": false,
+        "description": "Maximum tokens in summary",
+        "default": 100
+      },
+      "api_key_env": {
+        "type": "string",
+        "required": false,
+        "default": "OPENAI_API_KEY"
+      }
+    }
+  },
+  {
+    "name": "ai-entity-extractor",
+    "version": "0.1.0",
+    "description": "Extract named entities (people, organizations, locations, dates, amounts) from message text using LLM providers. Adds structured entity annotations to each message.",
+    "author": "StreamlineLabs",
+    "downloads": 0,
+    "checksum": "sha256:pending",
+    "categories": ["ai", "ner", "enrichment"],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/ai_entity_extractor.wasm",
+    "input_format": "json",
+    "output_format": "json",
+    "tags": ["ai", "llm", "ner", "entity-extraction", "nlp"],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/ai-entity-extractor",
+    "config_schema": {
+      "provider": {
+        "type": "string",
+        "required": true,
+        "default": "openai"
+      },
+      "model": {
+        "type": "string",
+        "required": false,
+        "default": "gpt-4o-mini"
+      },
+      "field": {
+        "type": "string",
+        "required": false,
+        "default": "value"
+      },
+      "entity_types": {
+        "type": "array",
+        "required": false,
+        "description": "Entity types to extract (default: all)",
+        "default": ["person", "organization", "location", "date", "amount"]
+      },
+      "output_field": {
+        "type": "string",
+        "required": false,
+        "default": "_entities"
+      },
+      "api_key_env": {
+        "type": "string",
+        "required": false,
+        "default": "OPENAI_API_KEY"
+      }
+    }
   }
 ]
