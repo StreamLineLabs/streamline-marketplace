@@ -1,5 +1,11 @@
 # Streamline WASM Transform Marketplace
 
+[![CI](https://github.com/streamlinelabs/streamline-marketplace/actions/workflows/ci.yml/badge.svg)](https://github.com/streamlinelabs/streamline-marketplace/actions/workflows/ci.yml)
+[![CodeQL](https://github.com/streamlinelabs/streamline-marketplace/actions/workflows/codeql.yml/badge.svg)](https://github.com/streamlinelabs/streamline-marketplace/actions/workflows/codeql.yml)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
+[![WASM](https://img.shields.io/badge/WebAssembly-purple?style=flat-square)](https://webassembly.org/)
+[![Docs](https://img.shields.io/badge/docs-streamlinelabs.dev-blue?style=flat-square)](https://streamlinelabs.dev/docs/features/wasm-transforms)
+
 A registry and discovery system for user-contributed WebAssembly (WASM) transforms for [Streamline](https://github.com/streamlinelabs/streamline) -- "The Redis of Streaming".
 
 ## Overview
