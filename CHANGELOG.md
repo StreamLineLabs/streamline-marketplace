@@ -1,6 +1,7 @@
 # Changelog
 
 All notable changes to this project will be documented in this file.
+- style: normalize card layout spacing (2026-02-22)
 - feat: add search filter for SDK categories (2026-02-22)
 - refactor: simplify operator state machine transitions (2026-02-22)
 
