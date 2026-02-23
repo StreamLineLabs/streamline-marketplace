@@ -185,13 +185,13 @@ jobs:
       contents: write
     steps:
       - name: Download WASM artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           name: wasm-transforms
           path: wasm/
 
       - name: Download CLI artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v7
         with:
           pattern: cli-*
           path: cli/
