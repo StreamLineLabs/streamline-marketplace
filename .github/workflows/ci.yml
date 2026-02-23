@@ -49,6 +49,15 @@ jobs:
           cargo clippy -p schema-validator --target wasm32-wasip1 -- -D warnings
           cargo clippy -p field-router --target wasm32-wasip1 -- -D warnings
 
+  cargo-deny:
+    name: Dependency Check (cargo-deny)
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check
+
   test:
     name: Test
     runs-on: ubuntu-latest
