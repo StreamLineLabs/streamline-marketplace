@@ -480,6 +480,17 @@ fn cmd_install(cli: &Cli, name_with_version: &str, force: bool) {
         &hash[..16]
     );
 
+    // Verify checksum against registry entry
+    if !entry.checksum.is_empty() && entry.checksum != "pending" && hash != entry.checksum {
+        eprintln!(
+            "{}: Checksum mismatch! Expected {}, got {}. The download may be corrupted or tampered with.",
+            "Error".red().bold(),
+            &entry.checksum[..16],
+            &hash[..16]
+        );
+        std::process::exit(1);
+    }
+
     // Save to transforms directory
     let install_dir = transforms_dir(cli)
         .join(&entry.name)
@@ -633,16 +644,8 @@ fn cmd_publish(cli: &Cli, path: &PathBuf, name: &Option<String>, version: &Optio
         .join("release")
         .join(&wasm_name);
 
-    if !wasm_path.exists() {
-        println!(
-            "    {} WASM binary not found at {}",
-            "Warning:".yellow().bold(),
-            wasm_path.display()
-        );
-        println!(
-            "    Build with: cargo build --target wasm32-wasip1 --release"
-        );
-    } else {
+    // Compute checksum for the WASM binary
+    let wasm_checksum = if wasm_path.exists() {
         let wasm_bytes = fs::read(&wasm_path).unwrap_or_default();
         let hash = sha256_hex(&wasm_bytes);
         println!(
@@ -651,7 +654,18 @@ fn cmd_publish(cli: &Cli, path: &PathBuf, name: &Option<String>, version: &Optio
             wasm_bytes.len(),
             &hash[..16]
         );
-    }
+        hash
+    } else {
+        println!(
+            "    {} WASM binary not found at {}",
+            "Warning:".yellow().bold(),
+            wasm_path.display()
+        );
+        println!(
+            "    Build with: cargo build --target wasm32-wasip1 --release"
+        );
+        String::new()
+    };
 
     let url = wasm_url.clone().unwrap_or_else(|| {
         format!(
@@ -667,7 +681,7 @@ fn cmd_publish(cli: &Cli, path: &PathBuf, name: &Option<String>, version: &Optio
         "description": format!("User-contributed transform: {}", pkg_name),
         "author": "community",
         "downloads": 0,
-        "checksum": "",
+        "checksum": wasm_checksum,
         "categories": ["format-conversion"],
         "min_streamline_version": "0.1.0",
         "wasm_url": url,
@@ -690,8 +704,17 @@ fn cmd_publish(cli: &Cli, path: &PathBuf, name: &Option<String>, version: &Optio
         .to_string();
     let api_url = format!("{}/api/v1/transforms", registry_base);
 
-    let auth_token = std::env::var("STREAMLINE_MARKETPLACE_TOKEN")
-        .unwrap_or_else(|_| "streamline-dev".into());
+    let auth_token = match std::env::var("STREAMLINE_MARKETPLACE_TOKEN") {
+        Ok(token) if !token.is_empty() => token,
+        _ => {
+            eprintln!(
+                "{}: STREAMLINE_MARKETPLACE_TOKEN environment variable is required for publishing.",
+                "Error".red().bold()
+            );
+            eprintln!("    Set it with: export STREAMLINE_MARKETPLACE_TOKEN=<your-token>");
+            std::process::exit(1);
+        }
+    };
 
     let publish_client = reqwest::blocking::Client::builder()
         .timeout(std::time::Duration::from_secs(120))

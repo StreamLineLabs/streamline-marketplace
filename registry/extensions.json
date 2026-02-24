@@ -1,0 +1,81 @@
+[
+  {
+    "name": "http-enricher",
+    "version": "0.1.0",
+    "type": "transform",
+    "description": "Enrich messages by calling an external HTTP API and merging the response into the message payload.",
+    "author": "StreamlineLabs",
+    "license": "Apache-2.0",
+    "min_streamline_version": "0.2.0",
+    "categories": ["enrichment", "http"],
+    "config_schema": {
+      "url": { "type": "string", "required": true, "description": "HTTP endpoint to call for enrichment" },
+      "method": { "type": "string", "required": false, "description": "HTTP method (GET, POST)", "default": "GET" },
+      "key_field": { "type": "string", "required": false, "description": "JSON field to use as query parameter", "default": "id" },
+      "merge_field": { "type": "string", "required": false, "description": "Field to merge response into", "default": "enrichment" },
+      "timeout_ms": { "type": "integer", "required": false, "description": "Request timeout in milliseconds", "default": 5000 },
+      "cache_ttl_secs": { "type": "integer", "required": false, "description": "Cache TTL for responses (0 = no cache)", "default": 60 }
+    }
+  },
+  {
+    "name": "json-flatten",
+    "version": "0.1.0",
+    "type": "transform",
+    "description": "Flatten nested JSON objects into a flat key-value structure using dot-notation keys.",
+    "author": "StreamlineLabs",
+    "license": "Apache-2.0",
+    "min_streamline_version": "0.2.0",
+    "categories": ["format-conversion"],
+    "config_schema": {
+      "separator": { "type": "string", "required": false, "description": "Key separator for nested fields", "default": "." },
+      "max_depth": { "type": "integer", "required": false, "description": "Maximum nesting depth to flatten", "default": 10 },
+      "array_notation": { "type": "string", "required": false, "description": "How to handle arrays: 'index' (field.0) or 'expand' (multiple keys)", "default": "index" }
+    }
+  },
+  {
+    "name": "message-router",
+    "version": "0.1.0",
+    "type": "transform",
+    "description": "Route messages to different output topics based on configurable rules matching JSON field values.",
+    "author": "StreamlineLabs",
+    "license": "Apache-2.0",
+    "min_streamline_version": "0.2.0",
+    "categories": ["routing"],
+    "config_schema": {
+      "rules": { "type": "array", "required": true, "description": "Array of {field, operator, value, topic} routing rules" },
+      "default_topic": { "type": "string", "required": false, "description": "Topic for messages matching no rules", "default": "unrouted" },
+      "include_metadata": { "type": "boolean", "required": false, "description": "Add routing metadata headers", "default": true }
+    }
+  },
+  {
+    "name": "aggregator",
+    "version": "0.1.0",
+    "type": "transform",
+    "description": "Aggregate messages within a time window and emit summary records (count, sum, avg, min, max).",
+    "author": "StreamlineLabs",
+    "license": "Apache-2.0",
+    "min_streamline_version": "0.2.0",
+    "categories": ["analytics", "aggregation"],
+    "config_schema": {
+      "window_secs": { "type": "integer", "required": true, "description": "Aggregation window duration in seconds" },
+      "group_by": { "type": "string", "required": false, "description": "JSON field to group by" },
+      "aggregations": { "type": "array", "required": true, "description": "Array of {field, function} where function is count/sum/avg/min/max" },
+      "emit_on_close": { "type": "boolean", "required": false, "description": "Emit aggregate only when window closes", "default": true }
+    }
+  },
+  {
+    "name": "protobuf-decoder",
+    "version": "0.1.0",
+    "type": "transform",
+    "description": "Decode Protocol Buffer binary messages into JSON using a compiled .proto schema.",
+    "author": "StreamlineLabs",
+    "license": "Apache-2.0",
+    "min_streamline_version": "0.2.0",
+    "categories": ["format-conversion", "schema"],
+    "config_schema": {
+      "proto_file": { "type": "string", "required": true, "description": "Path or URL to .proto file" },
+      "message_type": { "type": "string", "required": true, "description": "Fully-qualified protobuf message type name" },
+      "include_defaults": { "type": "boolean", "required": false, "description": "Include fields with default values", "default": false }
+    }
+  }
+]
