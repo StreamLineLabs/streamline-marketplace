@@ -170,3 +170,5 @@ mod tests {
         let _ = std::fs::remove_dir_all(&tmp);
     }
 }
+
+// add connector dependency resolution engine
