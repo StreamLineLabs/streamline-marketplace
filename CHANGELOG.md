@@ -36,4 +36,3 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
   - `info` - Show detailed transform information.
 - GitHub Actions CI workflow for building transforms to `wasm32-wasip1`.
 - Apache 2.0 license.
-
