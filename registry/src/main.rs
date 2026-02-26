@@ -15,6 +15,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+mod portal;
+mod security;
 mod store;
 
 use store::DataStore;

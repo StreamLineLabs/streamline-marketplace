@@ -6,12 +6,19 @@
     "author": "StreamlineLabs",
     "downloads": 1250,
     "checksum": "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
-    "categories": ["filtering"],
+    "categories": [
+      "filtering"
+    ],
     "min_streamline_version": "0.1.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/json_filter.wasm",
     "input_format": "json",
     "output_format": "json",
-    "tags": ["json", "filter", "conditional", "routing"],
+    "tags": [
+      "json",
+      "filter",
+      "conditional",
+      "routing"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/json-filter",
     "config_schema": {
@@ -40,12 +47,20 @@
     "author": "StreamlineLabs",
     "downloads": 980,
     "checksum": "sha256:b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
-    "categories": ["format-conversion"],
+    "categories": [
+      "format-conversion"
+    ],
     "min_streamline_version": "0.1.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/json_transform.wasm",
     "input_format": "json",
     "output_format": "json",
-    "tags": ["json", "transform", "rename", "flatten", "restructure"],
+    "tags": [
+      "json",
+      "transform",
+      "rename",
+      "flatten",
+      "restructure"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/json-transform",
     "config_schema": {
@@ -63,12 +78,20 @@
     "author": "StreamlineLabs",
     "downloads": 720,
     "checksum": "sha256:c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
-    "categories": ["format-conversion"],
+    "categories": [
+      "format-conversion"
+    ],
     "min_streamline_version": "0.1.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/csv_to_json.wasm",
     "input_format": "csv",
     "output_format": "json",
-    "tags": ["csv", "json", "convert", "parse", "etl"],
+    "tags": [
+      "csv",
+      "json",
+      "convert",
+      "parse",
+      "etl"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/csv-to-json",
     "config_schema": {
@@ -98,12 +121,20 @@
     "author": "StreamlineLabs",
     "downloads": 540,
     "checksum": "sha256:d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
-    "categories": ["format-conversion"],
+    "categories": [
+      "format-conversion"
+    ],
     "min_streamline_version": "0.1.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/json_to_avro.wasm",
     "input_format": "json",
     "output_format": "avro",
-    "tags": ["json", "avro", "schema", "serialization", "schema-registry"],
+    "tags": [
+      "json",
+      "avro",
+      "schema",
+      "serialization",
+      "schema-registry"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/json-to-avro",
     "config_schema": {
@@ -121,12 +152,20 @@
     "author": "StreamlineLabs",
     "downloads": 1100,
     "checksum": "sha256:e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
-    "categories": ["enrichment"],
+    "categories": [
+      "enrichment"
+    ],
     "min_streamline_version": "0.1.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/timestamp_enricher.wasm",
     "input_format": "json",
     "output_format": "json",
-    "tags": ["timestamp", "enrich", "time", "metadata", "processing"],
+    "tags": [
+      "timestamp",
+      "enrich",
+      "time",
+      "metadata",
+      "processing"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/timestamp-enricher",
     "config_schema": {
@@ -157,12 +196,21 @@
     "author": "StreamlineLabs",
     "downloads": 890,
     "checksum": "sha256:f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1",
-    "categories": ["security"],
+    "categories": [
+      "security"
+    ],
     "min_streamline_version": "0.1.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/pii_redactor.wasm",
     "input_format": "json",
     "output_format": "json",
-    "tags": ["pii", "redact", "privacy", "gdpr", "compliance", "security"],
+    "tags": [
+      "pii",
+      "redact",
+      "privacy",
+      "gdpr",
+      "compliance",
+      "security"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/pii-redactor",
     "config_schema": {
@@ -170,7 +218,11 @@
         "type": "array",
         "required": false,
         "description": "PII types to redact: email, phone, ssn, credit_card, ip_address. Default: all.",
-        "default": ["email", "phone", "ssn"]
+        "default": [
+          "email",
+          "phone",
+          "ssn"
+        ]
       },
       "replacement": {
         "type": "string",
@@ -192,12 +244,21 @@
     "author": "StreamlineLabs",
     "downloads": 670,
     "checksum": "sha256:a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3",
-    "categories": ["filtering", "analytics"],
+    "categories": [
+      "filtering",
+      "analytics"
+    ],
     "min_streamline_version": "0.1.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/schema_validator.wasm",
     "input_format": "json",
     "output_format": "json",
-    "tags": ["schema", "validation", "json-schema", "quality", "data-quality"],
+    "tags": [
+      "schema",
+      "validation",
+      "json-schema",
+      "quality",
+      "data-quality"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/schema-validator",
     "config_schema": {
@@ -221,12 +282,20 @@
     "author": "StreamlineLabs",
     "downloads": 430,
     "checksum": "sha256:b3c4d5e6f7a1b3c4d5e6f7a1b3c4d5e6f7a1b3c4d5e6f7a1b3c4d5e6f7a1b3c4",
-    "categories": ["routing"],
+    "categories": [
+      "routing"
+    ],
     "min_streamline_version": "0.1.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/field_router.wasm",
     "input_format": "json",
     "output_format": "json",
-    "tags": ["routing", "field", "topic", "conditional", "fanout"],
+    "tags": [
+      "routing",
+      "field",
+      "topic",
+      "conditional",
+      "fanout"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/field-router",
     "config_schema": {
@@ -254,12 +323,20 @@
     "author": "StreamlineLabs",
     "downloads": 560,
     "checksum": "sha256:c4d5e6f7a1b2c4d5e6f7a1b2c4d5e6f7a1b2c4d5e6f7a1b2c4d5e6f7a1b2c4d5",
-    "categories": ["filtering"],
+    "categories": [
+      "filtering"
+    ],
     "min_streamline_version": "0.1.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/deduplicator.wasm",
     "input_format": "json",
     "output_format": "json",
-    "tags": ["dedup", "deduplicate", "unique", "filter", "idempotent"],
+    "tags": [
+      "dedup",
+      "deduplicate",
+      "unique",
+      "filter",
+      "idempotent"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/deduplicator",
     "config_schema": {
@@ -289,12 +366,20 @@
     "author": "StreamlineLabs",
     "downloads": 380,
     "checksum": "sha256:d5e6f7a1b2c3d5e6f7a1b2c3d5e6f7a1b2c3d5e6f7a1b2c3d5e6f7a1b2c3d5e6",
-    "categories": ["filtering", "analytics"],
+    "categories": [
+      "filtering",
+      "analytics"
+    ],
     "min_streamline_version": "0.1.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/rate_limiter.wasm",
     "input_format": "any",
     "output_format": "any",
-    "tags": ["rate-limit", "throttle", "backpressure", "flow-control"],
+    "tags": [
+      "rate-limit",
+      "throttle",
+      "backpressure",
+      "flow-control"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/rate-limiter",
     "config_schema": {
@@ -324,12 +409,21 @@
     "author": "StreamlineLabs",
     "downloads": 310,
     "checksum": "sha256:e6f7a1b2c3d4e6f7a1b2c3d4e6f7a1b2c3d4e6f7a1b2c3d4e6f7a1b2c3d4e6f7",
-    "categories": ["enrichment"],
+    "categories": [
+      "enrichment"
+    ],
     "min_streamline_version": "0.1.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/geo_enricher.wasm",
     "input_format": "json",
     "output_format": "json",
-    "tags": ["geo", "geolocation", "ip", "geoip", "enrich", "location"],
+    "tags": [
+      "geo",
+      "geolocation",
+      "ip",
+      "geoip",
+      "enrich",
+      "location"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/geo-enricher",
     "config_schema": {
@@ -348,7 +442,12 @@
         "type": "array",
         "required": false,
         "description": "Which geo fields to include: country, city, region, latitude, longitude, timezone",
-        "default": ["country", "city", "latitude", "longitude"]
+        "default": [
+          "country",
+          "city",
+          "latitude",
+          "longitude"
+        ]
       }
     }
   },
@@ -359,12 +458,23 @@
     "author": "StreamlineLabs",
     "downloads": 0,
     "checksum": "sha256:pending",
-    "categories": ["ai", "classification", "enrichment"],
+    "categories": [
+      "ai",
+      "classification",
+      "enrichment"
+    ],
     "min_streamline_version": "0.2.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/ai_classifier.wasm",
     "input_format": "json",
     "output_format": "json",
-    "tags": ["ai", "llm", "classification", "machine-learning", "openai", "anthropic"],
+    "tags": [
+      "ai",
+      "llm",
+      "classification",
+      "machine-learning",
+      "openai",
+      "anthropic"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/ai-classifier",
     "config_schema": {
@@ -412,12 +522,22 @@
     "author": "StreamlineLabs",
     "downloads": 0,
     "checksum": "sha256:pending",
-    "categories": ["ai", "summarization", "enrichment"],
+    "categories": [
+      "ai",
+      "summarization",
+      "enrichment"
+    ],
     "min_streamline_version": "0.2.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/ai_summarizer.wasm",
     "input_format": "json",
     "output_format": "json",
-    "tags": ["ai", "llm", "summarization", "nlp", "text"],
+    "tags": [
+      "ai",
+      "llm",
+      "summarization",
+      "nlp",
+      "text"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/ai-summarizer",
     "config_schema": {
@@ -463,12 +583,22 @@
     "author": "StreamlineLabs",
     "downloads": 0,
     "checksum": "sha256:pending",
-    "categories": ["ai", "ner", "enrichment"],
+    "categories": [
+      "ai",
+      "ner",
+      "enrichment"
+    ],
     "min_streamline_version": "0.2.0",
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/ai_entity_extractor.wasm",
     "input_format": "json",
     "output_format": "json",
-    "tags": ["ai", "llm", "ner", "entity-extraction", "nlp"],
+    "tags": [
+      "ai",
+      "llm",
+      "ner",
+      "entity-extraction",
+      "nlp"
+    ],
     "license": "Apache-2.0",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/ai-entity-extractor",
     "config_schema": {
@@ -491,7 +621,13 @@
         "type": "array",
         "required": false,
         "description": "Entity types to extract (default: all)",
-        "default": ["person", "organization", "location", "date", "amount"]
+        "default": [
+          "person",
+          "organization",
+          "location",
+          "date",
+          "amount"
+        ]
       },
       "output_field": {
         "type": "string",
@@ -504,5 +640,240 @@
         "default": "OPENAI_API_KEY"
       }
     }
+  },
+  {
+    "name": "protobuf-to-json",
+    "version": "0.2.0",
+    "description": "Convert Protocol Buffers messages to JSON format with schema registry integration",
+    "author": "StreamlineLabs",
+    "license": "Apache-2.0",
+    "category": "format-conversion",
+    "input_format": "protobuf",
+    "output_format": "json",
+    "config_schema": {
+      "type": "object",
+      "properties": {
+        "schema_registry_url": {
+          "type": "string",
+          "description": "URL of the schema registry"
+        },
+        "include_defaults": {
+          "type": "boolean",
+          "default": true
+        }
+      }
+    },
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/protobuf-to-json.wasm",
+    "min_streamline_version": "0.2.0"
+  },
+  {
+    "name": "http-enricher",
+    "version": "0.2.0",
+    "description": "Enrich messages by calling external HTTP APIs (lookup tables, geocoding, metadata services)",
+    "author": "StreamlineLabs",
+    "license": "Apache-2.0",
+    "category": "enrichment",
+    "input_format": "json",
+    "output_format": "json",
+    "config_schema": {
+      "type": "object",
+      "properties": {
+        "url": {
+          "type": "string",
+          "description": "HTTP endpoint to call"
+        },
+        "method": {
+          "type": "string",
+          "enum": [
+            "GET",
+            "POST"
+          ],
+          "default": "GET"
+        },
+        "headers": {
+          "type": "object",
+          "description": "Additional HTTP headers"
+        },
+        "cache_ttl_seconds": {
+          "type": "integer",
+          "default": 300
+        },
+        "timeout_ms": {
+          "type": "integer",
+          "default": 5000
+        },
+        "output_field": {
+          "type": "string",
+          "default": "enrichment"
+        }
+      },
+      "required": [
+        "url"
+      ]
+    },
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/http-enricher.wasm",
+    "min_streamline_version": "0.2.0"
+  },
+  {
+    "name": "message-splitter",
+    "version": "0.2.0",
+    "description": "Split a single message into multiple messages based on array fields or delimiters",
+    "author": "StreamlineLabs",
+    "license": "Apache-2.0",
+    "category": "routing",
+    "input_format": "json",
+    "output_format": "json",
+    "config_schema": {
+      "type": "object",
+      "properties": {
+        "split_field": {
+          "type": "string",
+          "description": "JSON path to the array field to split on"
+        },
+        "preserve_parent": {
+          "type": "boolean",
+          "default": true,
+          "description": "Include parent fields in split messages"
+        },
+        "max_splits": {
+          "type": "integer",
+          "default": 1000
+        }
+      },
+      "required": [
+        "split_field"
+      ]
+    },
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/message-splitter.wasm",
+    "min_streamline_version": "0.2.0"
+  },
+  {
+    "name": "content-hash",
+    "version": "0.2.0",
+    "description": "Add content hashes (SHA-256, MD5, CRC32) for data integrity verification and deduplication",
+    "author": "StreamlineLabs",
+    "license": "Apache-2.0",
+    "category": "security",
+    "input_format": "json",
+    "output_format": "json",
+    "config_schema": {
+      "type": "object",
+      "properties": {
+        "algorithm": {
+          "type": "string",
+          "enum": [
+            "sha256",
+            "md5",
+            "crc32"
+          ],
+          "default": "sha256"
+        },
+        "fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          },
+          "description": "Fields to hash (empty = entire message)"
+        },
+        "output_field": {
+          "type": "string",
+          "default": "_hash"
+        }
+      }
+    },
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/content-hash.wasm",
+    "min_streamline_version": "0.2.0"
+  },
+  {
+    "name": "metrics-extractor",
+    "version": "0.2.0",
+    "description": "Extract numeric metrics from JSON messages and emit Prometheus-compatible metric events",
+    "author": "StreamlineLabs",
+    "license": "Apache-2.0",
+    "category": "analytics",
+    "input_format": "json",
+    "output_format": "json",
+    "config_schema": {
+      "type": "object",
+      "properties": {
+        "metrics": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "name": {
+                "type": "string"
+              },
+              "field": {
+                "type": "string"
+              },
+              "type": {
+                "type": "string",
+                "enum": [
+                  "counter",
+                  "gauge",
+                  "histogram"
+                ]
+              }
+            }
+          }
+        },
+        "label_fields": {
+          "type": "array",
+          "items": {
+            "type": "string"
+          }
+        }
+      },
+      "required": [
+        "metrics"
+      ]
+    },
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/metrics-extractor.wasm",
+    "min_streamline_version": "0.2.0"
+  },
+  {
+    "name": "data-masking",
+    "version": "0.2.0",
+    "description": "Mask sensitive data fields with configurable patterns (partial mask, full mask, tokenize, hash)",
+    "author": "StreamlineLabs",
+    "license": "Apache-2.0",
+    "category": "security",
+    "input_format": "json",
+    "output_format": "json",
+    "config_schema": {
+      "type": "object",
+      "properties": {
+        "rules": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "properties": {
+              "field": {
+                "type": "string"
+              },
+              "method": {
+                "type": "string",
+                "enum": [
+                  "partial",
+                  "full",
+                  "hash",
+                  "tokenize"
+                ]
+              },
+              "preserve_length": {
+                "type": "boolean",
+                "default": true
+              }
+            }
+          }
+        }
+      },
+      "required": [
+        "rules"
+      ]
+    },
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/data-masking.wasm",
+    "min_streamline_version": "0.2.0"
   }
 ]
