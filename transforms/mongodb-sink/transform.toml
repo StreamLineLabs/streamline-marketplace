@@ -1,0 +1,8 @@
+[transform]
+name = "mongodb-sink"
+version = "0.1.0"
+description = "Insert or upsert streaming data into MongoDB collections"
+author = "StreamlineLabs"
+license = "Apache-2.0"
+category = "sink"
+tags = ["mongodb", "nosql", "document-store", "database"]

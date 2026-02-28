@@ -1,0 +1,10 @@
+[package]
+name = "streamline-postgres-connector"
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "PostgreSQL source (CDC) and sink (upsert) connector"
+
+[dependencies]
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"

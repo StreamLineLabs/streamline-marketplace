@@ -459,8 +459,8 @@
     "downloads": 0,
     "checksum": "sha256:pending",
     "categories": [
-      "ai",
-      "classification",
+      "analytics",
+      "filtering",
       "enrichment"
     ],
     "min_streamline_version": "0.2.0",
@@ -523,8 +523,8 @@
     "downloads": 0,
     "checksum": "sha256:pending",
     "categories": [
-      "ai",
-      "summarization",
+      "analytics",
+      "enrichment",
       "enrichment"
     ],
     "min_streamline_version": "0.2.0",
@@ -584,8 +584,8 @@
     "downloads": 0,
     "checksum": "sha256:pending",
     "categories": [
-      "ai",
-      "ner",
+      "analytics",
+      "enrichment",
       "enrichment"
     ],
     "min_streamline_version": "0.2.0",
@@ -647,7 +647,6 @@
     "description": "Convert Protocol Buffers messages to JSON format with schema registry integration",
     "author": "StreamlineLabs",
     "license": "Apache-2.0",
-    "category": "format-conversion",
     "input_format": "protobuf",
     "output_format": "json",
     "config_schema": {
@@ -664,7 +663,19 @@
       }
     },
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/protobuf-to-json.wasm",
-    "min_streamline_version": "0.2.0"
+    "min_streamline_version": "0.2.0",
+    "categories": [
+      "format-conversion"
+    ],
+    "tags": [
+      "protobuf",
+      "json",
+      "conversion",
+      "schema-registry"
+    ],
+    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/protobuf-to-json",
+    "downloads": 0
   },
   {
     "name": "http-enricher",
@@ -672,7 +683,6 @@
     "description": "Enrich messages by calling external HTTP APIs (lookup tables, geocoding, metadata services)",
     "author": "StreamlineLabs",
     "license": "Apache-2.0",
-    "category": "enrichment",
     "input_format": "json",
     "output_format": "json",
     "config_schema": {
@@ -712,7 +722,19 @@
       ]
     },
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/http-enricher.wasm",
-    "min_streamline_version": "0.2.0"
+    "min_streamline_version": "0.2.0",
+    "categories": [
+      "enrichment"
+    ],
+    "tags": [
+      "http",
+      "enrichment",
+      "api",
+      "lookup"
+    ],
+    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/http-enricher",
+    "downloads": 0
   },
   {
     "name": "message-splitter",
@@ -720,7 +742,6 @@
     "description": "Split a single message into multiple messages based on array fields or delimiters",
     "author": "StreamlineLabs",
     "license": "Apache-2.0",
-    "category": "routing",
     "input_format": "json",
     "output_format": "json",
     "config_schema": {
@@ -745,7 +766,19 @@
       ]
     },
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/message-splitter.wasm",
-    "min_streamline_version": "0.2.0"
+    "min_streamline_version": "0.2.0",
+    "categories": [
+      "routing"
+    ],
+    "tags": [
+      "split",
+      "routing",
+      "array",
+      "fan-out"
+    ],
+    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/message-splitter",
+    "downloads": 0
   },
   {
     "name": "content-hash",
@@ -753,7 +786,6 @@
     "description": "Add content hashes (SHA-256, MD5, CRC32) for data integrity verification and deduplication",
     "author": "StreamlineLabs",
     "license": "Apache-2.0",
-    "category": "security",
     "input_format": "json",
     "output_format": "json",
     "config_schema": {
@@ -782,7 +814,19 @@
       }
     },
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/content-hash.wasm",
-    "min_streamline_version": "0.2.0"
+    "min_streamline_version": "0.2.0",
+    "categories": [
+      "security"
+    ],
+    "tags": [
+      "hash",
+      "integrity",
+      "deduplication",
+      "security"
+    ],
+    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/content-hash",
+    "downloads": 0
   },
   {
     "name": "metrics-extractor",
@@ -790,7 +834,6 @@
     "description": "Extract numeric metrics from JSON messages and emit Prometheus-compatible metric events",
     "author": "StreamlineLabs",
     "license": "Apache-2.0",
-    "category": "analytics",
     "input_format": "json",
     "output_format": "json",
     "config_schema": {
@@ -830,7 +873,19 @@
       ]
     },
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/metrics-extractor.wasm",
-    "min_streamline_version": "0.2.0"
+    "min_streamline_version": "0.2.0",
+    "categories": [
+      "analytics"
+    ],
+    "tags": [
+      "metrics",
+      "prometheus",
+      "analytics",
+      "monitoring"
+    ],
+    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/metrics-extractor",
+    "downloads": 0
   },
   {
     "name": "data-masking",
@@ -838,7 +893,6 @@
     "description": "Mask sensitive data fields with configurable patterns (partial mask, full mask, tokenize, hash)",
     "author": "StreamlineLabs",
     "license": "Apache-2.0",
-    "category": "security",
     "input_format": "json",
     "output_format": "json",
     "config_schema": {
@@ -874,6 +928,18 @@
       ]
     },
     "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/data-masking.wasm",
-    "min_streamline_version": "0.2.0"
+    "min_streamline_version": "0.2.0",
+    "categories": [
+      "security"
+    ],
+    "tags": [
+      "masking",
+      "privacy",
+      "pii",
+      "security"
+    ],
+    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/data-masking",
+    "downloads": 0
   }
 ]

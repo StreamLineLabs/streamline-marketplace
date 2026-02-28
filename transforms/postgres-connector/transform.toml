@@ -1,0 +1,8 @@
+[transform]
+name = "postgres-connector"
+version = "0.1.0"
+description = "PostgreSQL source (CDC) and sink (upsert) connector for streaming data"
+author = "StreamlineLabs"
+license = "Apache-2.0"
+category = "connector"
+tags = ["postgres", "postgresql", "database", "cdc", "sql"]

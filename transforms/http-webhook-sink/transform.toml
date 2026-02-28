@@ -1,0 +1,8 @@
+[transform]
+name = "http-webhook-sink"
+version = "0.1.0"
+description = "Send streaming data to HTTP endpoints via POST or PUT webhooks"
+author = "StreamlineLabs"
+license = "Apache-2.0"
+category = "sink"
+tags = ["http", "webhook", "api", "rest", "integration"]

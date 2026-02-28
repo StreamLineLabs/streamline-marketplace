@@ -1,0 +1,8 @@
+[transform]
+name = "bigquery-sink"
+version = "0.1.0"
+description = "Write streaming data to Google BigQuery via Storage Write API"
+author = "StreamlineLabs"
+license = "Apache-2.0"
+category = "sink"
+tags = ["bigquery", "gcp", "google-cloud", "data-warehouse", "analytics"]

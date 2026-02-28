@@ -1,0 +1,8 @@
+[transform]
+name = "redis-sink"
+version = "0.1.0"
+description = "Write streaming data to Redis via XADD, SET, or PUBLISH commands"
+author = "StreamlineLabs"
+license = "Apache-2.0"
+category = "sink"
+tags = ["redis", "cache", "streams", "pubsub"]

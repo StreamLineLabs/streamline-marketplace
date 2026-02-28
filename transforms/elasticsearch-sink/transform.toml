@@ -1,0 +1,8 @@
+[transform]
+name = "elasticsearch-sink"
+version = "0.1.0"
+description = "Bulk index streaming data into Elasticsearch clusters"
+author = "StreamlineLabs"
+license = "Apache-2.0"
+category = "sink"
+tags = ["elasticsearch", "search", "indexing", "observability"]

@@ -1,0 +1,8 @@
+[transform]
+name = "mysql-sink"
+version = "0.1.0"
+description = "Write streaming data to MySQL via INSERT or UPSERT prepared statements"
+author = "StreamlineLabs"
+license = "Apache-2.0"
+category = "sink"
+tags = ["mysql", "database", "sql", "rdbms"]

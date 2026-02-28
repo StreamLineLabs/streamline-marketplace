@@ -1,0 +1,8 @@
+[transform]
+name = "s3-sink"
+version = "0.1.0"
+description = "Write streaming data to Amazon S3 in JSON, Parquet, or CSV format"
+author = "StreamlineLabs"
+license = "Apache-2.0"
+category = "sink"
+tags = ["s3", "aws", "storage", "data-lake"]

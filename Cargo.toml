@@ -7,6 +7,17 @@ members = [
     "transforms/pii-redactor",
     "transforms/schema-validator",
     "transforms/field-router",
+    "transforms/ai-classifier",
+    "transforms/s3-sink",
+    "transforms/postgres-connector",
+    "transforms/elasticsearch-sink",
+    "transforms/http-webhook-sink",
+    "transforms/redis-sink",
+    "transforms/snowflake-sink",
+    "transforms/bigquery-sink",
+    "transforms/mongodb-sink",
+    "transforms/mysql-sink",
+    "transforms/slack-sink",
 ]
 resolver = "2"
 

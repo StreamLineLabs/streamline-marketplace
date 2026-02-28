@@ -1,0 +1,8 @@
+[transform]
+name = "slack-sink"
+version = "0.1.0"
+description = "Post streaming data as messages to Slack channels via webhooks"
+author = "StreamlineLabs"
+license = "Apache-2.0"
+category = "sink"
+tags = ["slack", "notifications", "messaging", "alerts"]

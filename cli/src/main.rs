@@ -116,10 +116,15 @@ struct TransformEntry {
     #[serde(default)]
     min_streamline_version: String,
     wasm_url: String,
+    #[serde(default)]
     input_format: String,
+    #[serde(default)]
     output_format: String,
+    #[serde(default)]
     tags: Vec<String>,
+    #[serde(default)]
     license: String,
+    #[serde(default)]
     repository_url: String,
     #[serde(default)]
     config_schema: serde_json::Value,

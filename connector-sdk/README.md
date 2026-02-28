@@ -1,76 +1,151 @@
 # Streamline Connector SDK
 
-Build custom source and sink connectors for Streamline using WebAssembly.
+Build custom source and sink connectors for the Streamline streaming platform.
 
 ## Quick Start
 
 ```bash
-# Create a new connector project
-streamline-cli connector new my-sink --type sink
-
-# Build to WASM
-cd my-sink
-cargo build --target wasm32-wasip1 --release
-
-# Test locally
-streamline-cli connector test target/wasm32-wasip1/release/my_sink.wasm
-
-# Publish to marketplace
-streamline-cli connector publish
+# Create a new connector project from template
+cargo init my-connector
+cd my-connector
 ```
 
-## Connector Types
-
-| Type | Interface | Use Case |
-|------|-----------|----------|
-| **Source** | `fn poll() -> Vec<Record>` | Pull data into Streamline |
-| **Sink** | `fn write(records: Vec<Record>)` | Push data out of Streamline |
-| **Transform** | `fn transform(record: Record) -> Record` | Modify records in-flight |
-
-## Project Structure
-
-```
-my-connector/
-├── Cargo.toml          # WASM build configuration
-├── src/
-│   └── lib.rs          # Connector implementation
-├── config.schema.json  # Configuration schema
-└── README.md           # Documentation
+Add to `Cargo.toml`:
+```toml
+[dependencies]
+streamline-connector-sdk = { path = "../connector-sdk" }
+tokio = { version = "1", features = ["full"] }
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
+async-trait = "0.1"
 ```
 
-## API Reference
-
-### Source Connector
+## Implementing a Sink Connector
 
 ```rust
-#[no_mangle]
-pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> i32;
+use streamline_connector_sdk::prelude::*;
+use async_trait::async_trait;
 
-#[no_mangle]
-pub extern "C" fn poll(out_ptr: *mut u8, out_len: *mut u32) -> i32;
+pub struct MySinkConnector {
+    config: MyConfig,
+}
 
-#[no_mangle]
-pub extern "C" fn shutdown() -> i32;
+#[derive(Debug, serde::Deserialize)]
+pub struct MyConfig {
+    pub target_url: String,
+    pub batch_size: usize,
+}
+
+#[async_trait]
+impl SinkConnector for MySinkConnector {
+    fn name(&self) -> &str {
+        "my-sink-connector"
+    }
+
+    fn version(&self) -> &str {
+        env!("CARGO_PKG_VERSION")
+    }
+
+    async fn start(&mut self) -> Result<(), ConnectorError> {
+        // Initialize resources (connections, files, etc.)
+        Ok(())
+    }
+
+    async fn put(&mut self, records: Vec<Record>) -> Result<(), ConnectorError> {
+        // Process a batch of records
+        for record in &records {
+            println!("Processing: {:?}", record.value);
+        }
+        Ok(())
+    }
+
+    async fn flush(&mut self) -> Result<(), ConnectorError> {
+        // Flush any buffered data
+        Ok(())
+    }
+
+    async fn stop(&mut self) -> Result<(), ConnectorError> {
+        // Cleanup resources
+        Ok(())
+    }
+}
 ```
 
-### Sink Connector
+## Implementing a Source Connector
 
 ```rust
-#[no_mangle]
-pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> i32;
+#[async_trait]
+impl SourceConnector for MySourceConnector {
+    fn name(&self) -> &str { "my-source-connector" }
+    fn version(&self) -> &str { env!("CARGO_PKG_VERSION") }
 
-#[no_mangle]
-pub extern "C" fn write(records_ptr: *const u8, records_len: u32) -> i32;
+    async fn start(&mut self) -> Result<(), ConnectorError> {
+        Ok(())
+    }
 
-#[no_mangle]
-pub extern "C" fn flush() -> i32;
+    async fn poll(&mut self) -> Result<Vec<Record>, ConnectorError> {
+        // Return new records from your source
+        Ok(vec![])
+    }
 
-#[no_mangle]
-pub extern "C" fn shutdown() -> i32;
+    async fn stop(&mut self) -> Result<(), ConnectorError> {
+        Ok(())
+    }
+}
 ```
 
-## Publishing
+## Testing
 
-1. Build: `cargo build --target wasm32-wasip1 --release`
-2. Test: `streamline-cli connector test <wasm-file>`
-3. Publish: `streamline-cli connector publish --name my-connector --version 0.1.0`
+```rust
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use streamline_connector_sdk::testing::*;
+
+    #[tokio::test]
+    async fn test_sink() {
+        let mut connector = MySinkConnector { /* ... */ };
+        connector.start().await.unwrap();
+
+        let records = vec![
+            Record::new("test-topic", b"hello".to_vec()),
+        ];
+        connector.put(records).await.unwrap();
+        connector.stop().await.unwrap();
+    }
+}
+```
+
+## Publishing to Marketplace
+
+1. Create `transform.toml` in your project root:
+```toml
+[transform]
+name = "my-connector"
+version = "0.1.0"
+description = "My custom connector"
+author = "Your Name"
+license = "Apache-2.0"
+category = "sink"
+tags = ["custom", "example"]
+
+[transform.config]
+target_url = { type = "string", required = true, description = "Target URL" }
+batch_size = { type = "integer", default = 100, description = "Batch size" }
+```
+
+2. Build and publish:
+```bash
+streamline-marketplace publish my-connector
+```
+
+## Error Handling
+
+```rust
+use streamline_connector_sdk::ConnectorError;
+
+// Return typed errors
+return Err(ConnectorError::Configuration("missing required field 'url'".into()));
+return Err(ConnectorError::Connection("target unreachable".into()));
+return Err(ConnectorError::Serialization("invalid JSON".into()));
+```
