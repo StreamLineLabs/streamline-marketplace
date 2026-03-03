@@ -46,4 +46,3 @@ deny = [
 [sources]
 unknown-registry = "deny"
 unknown-git = "warn"
-
