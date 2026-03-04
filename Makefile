@@ -1,25 +1,43 @@
-.PHONY: build test lint fmt check clean help build-transforms build-cli
+.PHONY: build test lint fmt check clean help build-transforms build-sinks build-cli
 
 WASM_TARGET = wasm32-wasip1
-TRANSFORMS = json-filter timestamp-enricher pii-redactor schema-validator field-router
+
+# WASM transforms (compile to wasm32-wasip1)
+WASM_TRANSFORMS = json-filter timestamp-enricher pii-redactor schema-validator field-router ai-classifier
+
+# Sink connectors (standard Rust library crates)
+SINK_TRANSFORMS = streamline-http-webhook-sink streamline-redis-sink streamline-postgres-connector \
+	streamline-elasticsearch-sink streamline-mongodb-sink streamline-slack-sink \
+	streamline-s3-sink streamline-snowflake-sink streamline-bigquery-sink streamline-mysql-sink
 
 help: ## Show this help
 	@grep -E '^[a-zA-Z_-]+:.*?## .*$$' $(MAKEFILE_LIST) | sort | awk 'BEGIN {FS = ":.*?## "}; {printf "\033[36m%-20s\033[0m %s\n", $$1, $$2}'
 
-build: build-cli build-transforms ## Build everything
+build: build-cli build-transforms build-sinks ## Build everything
 
 build-cli: ## Build the marketplace CLI
 	cargo build -p streamline-marketplace-cli --release
 
 build-transforms: ## Build all WASM transforms
-	@for t in $(TRANSFORMS); do \
-		echo "Building $$t..."; \
+	@for t in $(WASM_TRANSFORMS); do \
+		echo "Building $$t (WASM)..."; \
 		cargo build -p $$t --target $(WASM_TARGET) --release; \
+	done
+
+build-sinks: ## Build all sink connectors (native)
+	@for t in $(SINK_TRANSFORMS); do \
+		echo "Building $$t..."; \
+		cargo build -p $$t --release; \
 	done
 
 test: ## Run all tests
 	cargo test -p streamline-marketplace-cli
-	@for t in $(TRANSFORMS); do \
+	@for t in $(WASM_TRANSFORMS); do \
+		echo "Testing $$t..."; \
+		cargo test -p $$t; \
+	done
+	@for t in $(SINK_TRANSFORMS); do \
+		echo "Testing $$t..."; \
 		cargo test -p $$t; \
 	done
 
@@ -29,8 +47,11 @@ fmt: ## Format all code
 check: ## Check formatting and lints
 	cargo fmt --all -- --check
 	cargo clippy -p streamline-marketplace-cli --all-targets -- -D warnings
-	@for t in $(TRANSFORMS); do \
+	@for t in $(WASM_TRANSFORMS); do \
 		cargo clippy -p $$t --target $(WASM_TARGET) -- -D warnings; \
+	done
+	@for t in $(SINK_TRANSFORMS); do \
+		cargo clippy -p $$t --all-targets -- -D warnings; \
 	done
 
 lint: check ## Alias for check

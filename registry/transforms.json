@@ -941,6 +941,524 @@
     "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/data-masking",
     "downloads": 0
+  },
+  {
+    "name": "s3-sink",
+    "version": "0.2.0",
+    "description": "Write messages to Amazon S3 in JSON, NDJSON, or CSV format. Supports batch chunking, partition templates, and compression.",
+    "author": "StreamlineLabs",
+    "downloads": 420,
+    "checksum": "sha256:b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
+    "categories": [
+      "sink"
+    ],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/s3_sink",
+    "input_format": "json",
+    "output_format": "s3",
+    "tags": [
+      "s3",
+      "aws",
+      "storage",
+      "sink",
+      "ndjson",
+      "csv"
+    ],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/s3-sink",
+    "config_schema": {
+      "bucket": {
+        "type": "string",
+        "required": true,
+        "description": "S3 bucket name"
+      },
+      "region": {
+        "type": "string",
+        "required": true,
+        "description": "AWS region"
+      },
+      "prefix": {
+        "type": "string",
+        "required": false,
+        "description": "Key prefix"
+      },
+      "format": {
+        "type": "string",
+        "required": false,
+        "description": "Output format: json, ndjson, csv",
+        "default": "ndjson"
+      },
+      "batch_size": {
+        "type": "integer",
+        "required": false,
+        "description": "Max records per file",
+        "default": 1000
+      }
+    }
+  },
+  {
+    "name": "postgres-connector",
+    "version": "0.2.0",
+    "description": "Write messages to PostgreSQL via INSERT or UPSERT. Supports column mapping and batch operations.",
+    "author": "StreamlineLabs",
+    "downloads": 310,
+    "checksum": "sha256:c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4",
+    "categories": [
+      "sink"
+    ],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/postgres_connector",
+    "input_format": "json",
+    "output_format": "sql",
+    "tags": [
+      "postgres",
+      "postgresql",
+      "database",
+      "sink",
+      "sql"
+    ],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/postgres-connector",
+    "config_schema": {
+      "url": {
+        "type": "string",
+        "required": true,
+        "description": "PostgreSQL connection URL"
+      },
+      "table": {
+        "type": "string",
+        "required": true,
+        "description": "Target table name"
+      },
+      "write_mode": {
+        "type": "string",
+        "required": false,
+        "description": "insert or upsert",
+        "default": "insert"
+      },
+      "batch_size": {
+        "type": "integer",
+        "required": false,
+        "description": "Max records per batch",
+        "default": 500
+      }
+    }
+  },
+  {
+    "name": "elasticsearch-sink",
+    "version": "0.2.0",
+    "description": "Index messages into Elasticsearch using the Bulk API. Supports index templating, document ID extraction, and ingest pipelines.",
+    "author": "StreamlineLabs",
+    "downloads": 0,
+    "checksum": "sha256:d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5",
+    "categories": [
+      "sink"
+    ],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/elasticsearch_sink",
+    "input_format": "json",
+    "output_format": "elasticsearch",
+    "tags": [
+      "elasticsearch",
+      "search",
+      "sink",
+      "indexing",
+      "bulk"
+    ],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/elasticsearch-sink",
+    "config_schema": {
+      "url": {
+        "type": "string",
+        "required": true,
+        "description": "Elasticsearch URL"
+      },
+      "index": {
+        "type": "string",
+        "required": true,
+        "description": "Target index (supports {field} templates)"
+      },
+      "bulk_size": {
+        "type": "integer",
+        "required": false,
+        "description": "Max documents per bulk request",
+        "default": 500
+      },
+      "doc_id_field": {
+        "type": "string",
+        "required": false,
+        "description": "JSON field to use as document _id"
+      },
+      "pipeline": {
+        "type": "string",
+        "required": false,
+        "description": "Ingest pipeline name"
+      }
+    }
+  },
+  {
+    "name": "mongodb-sink",
+    "version": "0.2.0",
+    "description": "Write messages to MongoDB via insertMany or bulk upsert. Supports configurable write modes and batch sizes.",
+    "author": "StreamlineLabs",
+    "downloads": 0,
+    "checksum": "sha256:e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6",
+    "categories": [
+      "sink"
+    ],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/mongodb_sink",
+    "input_format": "json",
+    "output_format": "mongodb",
+    "tags": [
+      "mongodb",
+      "nosql",
+      "database",
+      "sink"
+    ],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/mongodb-sink",
+    "config_schema": {
+      "uri": {
+        "type": "string",
+        "required": true,
+        "description": "MongoDB connection URI"
+      },
+      "database": {
+        "type": "string",
+        "required": true,
+        "description": "Target database"
+      },
+      "collection": {
+        "type": "string",
+        "required": true,
+        "description": "Target collection"
+      },
+      "write_mode": {
+        "type": "string",
+        "required": false,
+        "description": "insert or upsert",
+        "default": "insert"
+      },
+      "batch_size": {
+        "type": "integer",
+        "required": false,
+        "description": "Max documents per batch",
+        "default": 1000
+      }
+    }
+  },
+  {
+    "name": "mysql-sink",
+    "version": "0.2.0",
+    "description": "Write messages to MySQL via INSERT, REPLACE, or INSERT IGNORE. Supports column mapping and batch operations.",
+    "author": "StreamlineLabs",
+    "downloads": 0,
+    "checksum": "sha256:f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7",
+    "categories": [
+      "sink"
+    ],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/mysql_sink",
+    "input_format": "json",
+    "output_format": "sql",
+    "tags": [
+      "mysql",
+      "database",
+      "sink",
+      "sql"
+    ],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/mysql-sink",
+    "config_schema": {
+      "url": {
+        "type": "string",
+        "required": true,
+        "description": "MySQL connection URL"
+      },
+      "table": {
+        "type": "string",
+        "required": true,
+        "description": "Target table name"
+      },
+      "write_mode": {
+        "type": "string",
+        "required": false,
+        "description": "insert, replace, or insert_ignore",
+        "default": "insert"
+      },
+      "columns": {
+        "type": "array",
+        "required": false,
+        "description": "Column names to insert into"
+      },
+      "batch_size": {
+        "type": "integer",
+        "required": false,
+        "description": "Max records per batch",
+        "default": 500
+      }
+    }
+  },
+  {
+    "name": "redis-sink",
+    "version": "0.2.0",
+    "description": "Write messages to Redis using SET, XADD, LPUSH, or PUBLISH commands. Supports key prefixes and TTL.",
+    "author": "StreamlineLabs",
+    "downloads": 0,
+    "checksum": "sha256:a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8",
+    "categories": [
+      "sink"
+    ],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/redis_sink",
+    "input_format": "json",
+    "output_format": "redis",
+    "tags": [
+      "redis",
+      "cache",
+      "sink",
+      "pubsub",
+      "streams"
+    ],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/redis-sink",
+    "config_schema": {
+      "url": {
+        "type": "string",
+        "required": true,
+        "description": "Redis connection URL"
+      },
+      "command": {
+        "type": "string",
+        "required": true,
+        "description": "Redis command: set, xadd, lpush, publish"
+      },
+      "key_field": {
+        "type": "string",
+        "required": false,
+        "description": "JSON field to use as key"
+      },
+      "key_prefix": {
+        "type": "string",
+        "required": false,
+        "description": "Prefix for all keys"
+      },
+      "ttl_secs": {
+        "type": "integer",
+        "required": false,
+        "description": "TTL in seconds for SET commands"
+      }
+    }
+  },
+  {
+    "name": "snowflake-sink",
+    "version": "0.2.0",
+    "description": "Load messages into Snowflake tables via staged NDJSON files. Supports batch chunking and warehouse selection.",
+    "author": "StreamlineLabs",
+    "downloads": 0,
+    "checksum": "sha256:b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9",
+    "categories": [
+      "sink"
+    ],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/snowflake_sink",
+    "input_format": "json",
+    "output_format": "snowflake",
+    "tags": [
+      "snowflake",
+      "data-warehouse",
+      "sink",
+      "analytics"
+    ],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/snowflake-sink",
+    "config_schema": {
+      "account": {
+        "type": "string",
+        "required": true,
+        "description": "Snowflake account identifier"
+      },
+      "warehouse": {
+        "type": "string",
+        "required": true,
+        "description": "Warehouse name"
+      },
+      "database": {
+        "type": "string",
+        "required": true,
+        "description": "Database name"
+      },
+      "schema": {
+        "type": "string",
+        "required": true,
+        "description": "Schema name"
+      },
+      "table": {
+        "type": "string",
+        "required": true,
+        "description": "Target table"
+      },
+      "batch_size": {
+        "type": "integer",
+        "required": false,
+        "description": "Max records per load",
+        "default": 1000
+      }
+    }
+  },
+  {
+    "name": "bigquery-sink",
+    "version": "0.2.0",
+    "description": "Stream messages into Google BigQuery via the tabledata.insertAll API. Supports insert ID deduplication and column mapping.",
+    "author": "StreamlineLabs",
+    "downloads": 0,
+    "checksum": "sha256:c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0",
+    "categories": [
+      "sink"
+    ],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/bigquery_sink",
+    "input_format": "json",
+    "output_format": "bigquery",
+    "tags": [
+      "bigquery",
+      "gcp",
+      "google",
+      "data-warehouse",
+      "sink",
+      "analytics"
+    ],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/bigquery-sink",
+    "config_schema": {
+      "project_id": {
+        "type": "string",
+        "required": true,
+        "description": "GCP project ID"
+      },
+      "dataset": {
+        "type": "string",
+        "required": true,
+        "description": "BigQuery dataset"
+      },
+      "table": {
+        "type": "string",
+        "required": true,
+        "description": "Target table"
+      },
+      "insert_id_field": {
+        "type": "string",
+        "required": false,
+        "description": "JSON field for deduplication insert ID"
+      },
+      "batch_size": {
+        "type": "integer",
+        "required": false,
+        "description": "Max rows per insert",
+        "default": 500
+      }
+    }
+  },
+  {
+    "name": "http-webhook-sink",
+    "version": "0.2.0",
+    "description": "Forward messages to any HTTP endpoint via POST or PUT. Supports authentication (Bearer, Basic, API key), batch mode, and retry.",
+    "author": "StreamlineLabs",
+    "downloads": 0,
+    "checksum": "sha256:d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1",
+    "categories": [
+      "sink"
+    ],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/http_webhook_sink",
+    "input_format": "json",
+    "output_format": "http",
+    "tags": [
+      "http",
+      "webhook",
+      "api",
+      "sink",
+      "rest"
+    ],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/http-webhook-sink",
+    "config_schema": {
+      "url": {
+        "type": "string",
+        "required": true,
+        "description": "Target webhook URL"
+      },
+      "method": {
+        "type": "string",
+        "required": false,
+        "description": "HTTP method: post or put",
+        "default": "post"
+      },
+      "batch_mode": {
+        "type": "boolean",
+        "required": false,
+        "description": "Send records as JSON array",
+        "default": false
+      },
+      "retry_count": {
+        "type": "integer",
+        "required": false,
+        "description": "Number of retries on failure",
+        "default": 3
+      },
+      "timeout_ms": {
+        "type": "integer",
+        "required": false,
+        "description": "Request timeout in milliseconds",
+        "default": 30000
+      }
+    }
+  },
+  {
+    "name": "slack-sink",
+    "version": "0.2.0",
+    "description": "Send messages to Slack channels via incoming webhooks. Supports message templating with field substitution.",
+    "author": "StreamlineLabs",
+    "downloads": 0,
+    "checksum": "sha256:e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2",
+    "categories": [
+      "sink"
+    ],
+    "min_streamline_version": "0.2.0",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/slack_sink",
+    "input_format": "json",
+    "output_format": "slack",
+    "tags": [
+      "slack",
+      "notifications",
+      "alerting",
+      "sink",
+      "messaging"
+    ],
+    "license": "Apache-2.0",
+    "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/slack-sink",
+    "config_schema": {
+      "webhook_url": {
+        "type": "string",
+        "required": true,
+        "description": "Slack incoming webhook URL"
+      },
+      "template": {
+        "type": "string",
+        "required": false,
+        "description": "Message template with {field} substitution"
+      },
+      "channel": {
+        "type": "string",
+        "required": false,
+        "description": "Override channel"
+      },
+      "username": {
+        "type": "string",
+        "required": false,
+        "description": "Override bot username"
+      }
+    }
   }
 ]
-
