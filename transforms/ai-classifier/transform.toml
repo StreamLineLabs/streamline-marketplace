@@ -1,0 +1,41 @@
+[transform]
+name = "ai-classifier"
+version = "0.2.0"
+description = "Classify messages using keyword matching or LLM providers (OpenAI, Anthropic, Ollama). Routes messages to categories based on content analysis."
+author = "StreamlineLabs"
+license = "Apache-2.0"
+repository = "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/ai-classifier"
+min_streamline_version = "0.2.0"
+categories = ["ai", "classification", "routing"]
+tags = ["ai", "llm", "classifier", "openai", "anthropic", "ollama", "routing", "nlp"]
+
+[io]
+input_format = "json"
+output_format = "json"
+
+[config.categories]
+type = "string"
+required = true
+description = "Comma-separated list of classification categories (e.g. 'spam,ham,urgent')"
+
+[config.field]
+type = "string"
+required = false
+description = "JSON field to classify. Defaults to the full message value."
+default = "value"
+
+[config.provider]
+type = "string"
+required = false
+description = "LLM provider: 'keyword' (default, no API needed), 'openai', 'anthropic', 'ollama'"
+default = "keyword"
+
+[config.model]
+type = "string"
+required = false
+description = "Model name for LLM providers (e.g. 'gpt-4', 'claude-3-haiku')"
+
+[config.api_key]
+type = "string"
+required = false
+description = "API key for LLM provider (not needed for keyword or ollama)"
