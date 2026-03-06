@@ -7,6 +7,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 
 - chore: optimize image assets for marketplace tiles (2026-03-06)
+
+- feat: add connector catalog filtering (2026-03-06)
 ## [Unreleased]
 
 - test: add integration tests for registry API
