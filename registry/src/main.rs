@@ -298,8 +298,13 @@ async fn publish_transform(
     mut multipart: Multipart,
 ) -> Result<(StatusCode, Json<TransformEntry>), (StatusCode, String)> {
     // Simple Bearer token auth
-    let expected_token =
-        std::env::var("REGISTRY_AUTH_TOKEN").unwrap_or_else(|_| "streamline-dev".into());
+    let expected_token = match std::env::var("REGISTRY_AUTH_TOKEN") {
+        Ok(token) if !token.is_empty() => token,
+        _ => {
+            eprintln!("WARNING: REGISTRY_AUTH_TOKEN not set — using insecure default. Set this env var in production.");
+            "streamline-dev".into()
+        }
+    };
     let auth = headers
         .get("authorization")
         .and_then(|v| v.to_str().ok())
