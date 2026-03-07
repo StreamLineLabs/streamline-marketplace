@@ -1,4 +1,5 @@
 [transform]
+
 name = "schema-validator"
 version = "0.1.0"
 description = "Validate JSON messages against a JSON Schema. Invalid messages are dropped or routed to a dead-letter topic."
