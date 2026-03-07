@@ -31,3 +31,8 @@ Thumbs.db
 # Registry server runtime data (keep seed transforms.json)
 registry/data/transforms.json
 registry/data/wasm/
+
+# Build output
+target/
+*.wasm
+pkg/
