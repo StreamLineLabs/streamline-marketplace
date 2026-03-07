@@ -1,0 +1,29 @@
+# Docker Compose for Marketplace Integration Tests
+#
+# Spins up a Streamline server with WASM transform support for end-to-end testing.
+#
+# Usage:
+#   docker compose -f docker-compose.test.yml up -d
+#   cargo test -p streamline-marketplace-registry
+#   docker compose -f docker-compose.test.yml down
+
+services:
+  streamline:
+    image: ghcr.io/streamlinelabs/streamline:0.2.0
+    container_name: streamline-marketplace-test
+    ports:
+      - "9092:9092"
+      - "9094:9094"
+    environment:
+      - STREAMLINE_LISTEN_ADDR=0.0.0.0:9092
+      - STREAMLINE_HTTP_ADDR=0.0.0.0:9094
+      - STREAMLINE_IN_MEMORY=true
+      - STREAMLINE_LOG_LEVEL=info
+    healthcheck:
+      test: ["CMD", "curl", "-sf", "http://localhost:9094/health"]
+      interval: 2s
+      timeout: 3s
+      retries: 15
+      start_period: 2s
+    tmpfs:
+      - /data
