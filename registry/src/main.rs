@@ -562,3 +562,5 @@ mod tests {
         assert!(VALID_CATEGORIES.contains(&"route"));
     }
 }
+
+// Performance note: Registry lookups are O(1) via HashMap index
