@@ -172,3 +172,25 @@ mod tests {
 }
 
 // add connector dependency resolution engine
+
+
+/// Metadata for a registered transform in the marketplace.
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct TransformMetadata {
+    pub name: String,
+    pub version: String,
+    pub description: String,
+    pub author: String,
+    pub category: TransformCategory,
+    pub downloads: u64,
+    pub verified: bool,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub enum TransformCategory {
+    Sink,
+    Source,
+    Filter,
+    Transform,
+    Enrichment,
+}
