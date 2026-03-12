@@ -736,7 +736,7 @@ fn cmd_publish(cli: &Cli, path: &PathBuf, name: &Option<String>, version: &Optio
                     reqwest::blocking::multipart::Part::bytes(wasm_bytes)
                         .file_name(wasm_name.clone())
                         .mime_str("application/wasm")
-                        .unwrap(),
+                        .expect("valid MIME type literal"),
                 );
 
             match client
@@ -1288,7 +1288,7 @@ mod tests {
 
             // Verify valid category values
             let valid_categories = [
-                "filtering", "enrichment", "routing", "security", "analytics", "format-conversion",
+                "filtering", "enrichment", "routing", "security", "analytics", "format-conversion", "sink",
             ];
             for entry in &entries {
                 for cat in &entry.categories {

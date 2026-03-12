@@ -29,6 +29,7 @@ const VALID_CATEGORIES: &[&str] = &[
     "aggregate",
     "enrich",
     "route",
+    "sink",
     // Legacy aliases (kept for backward-compat with existing registry data)
     "filtering",
     "enrichment",
@@ -161,8 +162,12 @@ async fn main() {
     let bind = std::env::var("REGISTRY_BIND").unwrap_or_else(|_| "0.0.0.0:8080".into());
     tracing::info!("Marketplace registry listening on {}", bind);
 
-    let listener = tokio::net::TcpListener::bind(&bind).await.unwrap();
-    axum::serve(listener, app).await.unwrap();
+    let listener = tokio::net::TcpListener::bind(&bind).await
+        .expect("Failed to bind registry TCP listener — check REGISTRY_BIND address");
+    if let Err(e) = axum::serve(listener, app).await {
+        tracing::error!("Marketplace registry exited with error: {e}");
+        std::process::exit(1);
+    }
 }
 
 // ---------------------------------------------------------------------------
@@ -189,7 +194,7 @@ async fn list_transforms(
     let mut latest: HashMap<String, TransformEntry> = HashMap::new();
     for entry in &results {
         let existing = latest.get(&entry.name);
-        if existing.is_none() || version_gt(&entry.version, &existing.unwrap().version) {
+        if existing.map_or(true, |e| version_gt(&entry.version, &e.version)) {
             latest.insert(entry.name.clone(), entry.clone());
         }
     }

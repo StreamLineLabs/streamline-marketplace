@@ -1,14 +1,25 @@
 //! {{project-name}} — Streamline Sink Connector
 //!
-//! This is a template for building a custom sink connector.
-//! Replace the TODO sections with your implementation.
+//! # Connector Template
+//!
+//! This is a **starter template** for building custom sink connectors.
+//! It is NOT meant to be used as-is. Copy this template and replace the
+//! placeholder sections marked with `CUSTOMIZE:` comments below.
+//!
+//! ## Getting Started
+//!
+//! 1. Copy this template: `streamline-marketplace install --template sink`
+//! 2. Replace `CUSTOMIZE:` sections with your implementation
+//! 3. Build: `cargo build --target wasm32-wasip1 --release`
+//! 4. Test: `cargo test`
+//! 5. Publish: `streamline-marketplace publish`
 
 use serde::Deserialize;
 use std::cell::RefCell;
 
 #[derive(Deserialize)]
 struct Config {
-    // TODO: Add your connector configuration fields
+    // CUSTOMIZE: Add your connector configuration fields
     endpoint: String,
     #[serde(default = "default_batch_size")]
     batch_size: usize,
@@ -57,8 +68,8 @@ pub extern "C" fn write(records_ptr: *const u8, records_len: u32) -> i32 {
             None => return -2, // not initialized
         };
 
-        // TODO: Implement your sink logic here
-        // Example: send records to an HTTP endpoint
+        // CUSTOMIZE: Implement your sink logic here
+        // Example: send each record to an HTTP endpoint
         for _record in &records {
             // http_post(&config.endpoint, record);
         }
@@ -70,7 +81,7 @@ pub extern "C" fn write(records_ptr: *const u8, records_len: u32) -> i32 {
 /// Flush any buffered records.
 #[no_mangle]
 pub extern "C" fn flush() -> i32 {
-    // TODO: Flush any internal buffers
+    // CUSTOMIZE: Flush any internal buffers to the sink destination
     0
 }
 
