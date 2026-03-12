@@ -165,6 +165,10 @@ fn evaluate(field_value: Option<&Value>, operator: &Operator, compare_value: &Op
 /// Returns 1 on success, 0 on failure.
 #[no_mangle]
 pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
+    const MAX_CONFIG_SIZE: u32 = 1024 * 1024; // 1MB max config
+    if config_ptr.is_null() || config_len == 0 || config_len > MAX_CONFIG_SIZE {
+        return 0;
+    }
     let config_bytes = unsafe { std::slice::from_raw_parts(config_ptr, config_len as usize) };
 
     let config: Value = match serde_json::from_slice(config_bytes) {
@@ -202,6 +206,10 @@ pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
 /// Filter function: returns 1 if the message should be kept, 0 if it should be dropped.
 #[no_mangle]
 pub extern "C" fn filter(input_ptr: *const u8, input_len: u32) -> u32 {
+    const MAX_INPUT_SIZE: u32 = 64 * 1024 * 1024; // 64MB max message
+    if input_ptr.is_null() || input_len == 0 || input_len > MAX_INPUT_SIZE {
+        return 1; // pass through on invalid input
+    }
     let input = unsafe { std::slice::from_raw_parts(input_ptr, input_len as usize) };
 
     let config = unsafe {

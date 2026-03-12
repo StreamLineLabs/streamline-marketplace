@@ -155,6 +155,19 @@ fn redact_value(value: &mut Value, config: &RedactorConfig) {
 /// Returns 1 on success, 0 on failure.
 #[no_mangle]
 pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
+    const MAX_CONFIG_SIZE: u32 = 1024 * 1024; // 1MB max config
+    if config_ptr.is_null() || config_len > MAX_CONFIG_SIZE {
+        // On null/oversized config, use defaults
+        let patterns = build_patterns(&[]);
+        unsafe {
+            CONFIG = Some(RedactorConfig {
+                patterns,
+                replacement: "***REDACTED***".to_string(),
+                fields: Vec::new(),
+            });
+        }
+        return 1;
+    }
     let config_bytes = unsafe { std::slice::from_raw_parts(config_ptr, config_len as usize) };
 
     let config: Value = match serde_json::from_slice(config_bytes) {
@@ -221,6 +234,10 @@ pub extern "C" fn filter(_input_ptr: *const u8, _input_len: u32) -> u32 {
 /// Transform a message by redacting PII from string fields.
 #[no_mangle]
 pub extern "C" fn transform(input_ptr: *const u8, input_len: u32, output_ptr: *mut u8) -> u32 {
+    const MAX_INPUT_SIZE: u32 = 64 * 1024 * 1024; // 64MB max message
+    if input_ptr.is_null() || output_ptr.is_null() || input_len == 0 || input_len > MAX_INPUT_SIZE {
+        return 0;
+    }
     let input = unsafe { std::slice::from_raw_parts(input_ptr, input_len as usize) };
 
     let config = unsafe {
