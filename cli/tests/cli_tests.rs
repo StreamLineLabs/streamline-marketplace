@@ -92,3 +92,4 @@ fn test_cli_unknown_subcommand_fails() {
         "Unknown subcommand should produce an error"
     );
 }
+
