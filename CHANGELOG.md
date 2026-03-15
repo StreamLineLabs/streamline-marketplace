@@ -47,3 +47,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - Apache 2.0 license.
 - feat: add connector health check API endpoint
 - docs: update marketplace listing submission guidelines
+- chore: clean up deprecated connector registry entries
