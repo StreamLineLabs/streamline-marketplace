@@ -51,3 +51,4 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - docs: add connector development quickstart tutorial
 - chore: refresh connector availability metadata
 - chore: archive sunset connector listings
+- docs: publish updated connector SDK integration guide
