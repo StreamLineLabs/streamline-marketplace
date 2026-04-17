@@ -5,6 +5,7 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue?style=flat-square)](LICENSE)
 [![WASM](https://img.shields.io/badge/WebAssembly-purple?style=flat-square)](https://webassembly.org/)
 [![Docs](https://img.shields.io/badge/docs-streamlinelabs.dev-blue?style=flat-square)](https://streamlinelabs.dev/docs/features/wasm-transforms)
+[![Release](https://img.shields.io/github/v/release/streamlinelabs/streamline-marketplace?label=release)](https://github.com/streamlinelabs/streamline-marketplace/releases)
 
 A registry and discovery system for user-contributed WebAssembly (WASM) transforms for [Streamline](https://github.com/streamlinelabs/streamline) -- "The Redis of Streaming".
 
@@ -32,6 +33,34 @@ The WASM Transform Marketplace enables the Streamline community to share, discov
                     v                   v
               ~/.streamline/       <data-dir>/transforms/
               transforms/          (cached WASM modules)
+```
+
+## Quick Start
+
+### Install a Transform
+
+```bash
+# Search the marketplace
+streamline marketplace search "json-filter"
+
+# Install a WASM transform
+streamline marketplace install json-filter
+
+# Apply to a topic
+streamline topic alter my-topic --transform json-filter
+```
+
+### Publish a Transform
+
+```bash
+# Create a new transform project
+streamline marketplace init my-transform --lang rust
+
+# Build the WASM module
+cd my-transform && make build
+
+# Publish to the marketplace
+streamline marketplace publish --name my-transform --version 0.1.0
 ```
 
 ## Publishing Transforms
