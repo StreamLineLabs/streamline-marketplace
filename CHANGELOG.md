@@ -13,6 +13,9 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 - fix: resolve search indexing for custom connectors (2026-03-06)
 ## [Unreleased]
 
+
+## [0.3.0] - 2026-04-20
+
 - test: add integration tests for registry API
 - feat: add connector dependency resolution engine
 
