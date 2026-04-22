@@ -366,7 +366,7 @@ dependencies = [
 
 [[package]]
 name = "field-router"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde_json",
 ]
@@ -798,7 +798,7 @@ dependencies = [
 
 [[package]]
 name = "json-filter"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde_json",
 ]
@@ -987,7 +987,7 @@ checksum = "9b4f627cb1b25917193a259e49bdad08f671f8d9708acfd5fe0a8c1455d87220"
 
 [[package]]
 name = "pii-redactor"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "regex",
  "serde_json",
@@ -1306,7 +1306,7 @@ checksum = "9774ba4a74de5f7b1c1451ed6cd5285a32eddb5cccb8cc655a4e50009e06477f"
 
 [[package]]
 name = "schema-validator"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde_json",
 ]
@@ -1485,7 +1485,7 @@ dependencies = [
 
 [[package]]
 name = "streamline-marketplace-cli"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "clap",
  "colored",
@@ -1500,7 +1500,7 @@ dependencies = [
 
 [[package]]
 name = "streamline-marketplace-registry"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "axum",
  "hex",
@@ -1664,7 +1664,7 @@ dependencies = [
 
 [[package]]
 name = "timestamp-enricher"
-version = "0.2.0"
+version = "0.3.0"
 dependencies = [
  "serde_json",
 ]
