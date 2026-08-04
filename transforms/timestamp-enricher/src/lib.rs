@@ -23,6 +23,30 @@ use serde_json::Value;
 /// Global enricher configuration, set once during init.
 static mut CONFIG: Option<EnricherConfig> = None;
 
+/// Borrow the module-global configuration.
+///
+/// Accessed through a raw pointer rather than a direct reference to the
+/// `static mut`, which would be undefined behaviour under the Rust 2024
+/// `static_mut_refs` rules.
+///
+/// # Safety
+///
+/// A WASM transform instance is single-threaded and the host runtime always
+/// calls `init` before `transform`, so no `&mut` alias can exist while the
+/// returned reference is live.
+unsafe fn config() -> Option<&'static EnricherConfig> {
+    (*std::ptr::addr_of!(CONFIG)).as_ref()
+}
+
+/// Replace the module-global configuration.
+///
+/// # Safety
+///
+/// Must not be called while a reference returned by [`config`] is live.
+unsafe fn set_config(config: EnricherConfig) {
+    *std::ptr::addr_of_mut!(CONFIG) = Some(config);
+}
+
 /// Enricher configuration.
 struct EnricherConfig {
     /// Field name to add (default: "_processed_at")
@@ -110,8 +134,13 @@ fn days_to_ymd(days: i64) -> (i64, u32, u32) {
 /// Initialize the enricher with configuration JSON.
 ///
 /// Returns 1 on success, 0 on failure.
+///
+/// # Safety
+///
+/// `config_ptr` must point to `config_len` initialized bytes that stay valid
+/// for the duration of the call.
 #[no_mangle]
-pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
+pub unsafe extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
     let config_bytes = unsafe { std::slice::from_raw_parts(config_ptr, config_len as usize) };
 
     let config: Value = match serde_json::from_slice(config_bytes) {
@@ -119,7 +148,7 @@ pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
         Err(_) => {
             // Use defaults if config is invalid
             unsafe {
-                CONFIG = Some(EnricherConfig {
+                set_config(EnricherConfig {
                     field_name: "_processed_at".to_string(),
                     format: TimestampFormat::Iso8601,
                 });
@@ -141,7 +170,7 @@ pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
         .unwrap_or(TimestampFormat::Iso8601);
 
     unsafe {
-        CONFIG = Some(EnricherConfig { field_name, format });
+        set_config(EnricherConfig { field_name, format });
     }
 
     1
@@ -151,12 +180,22 @@ pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
 ///
 /// If the message is a JSON object, the configured field is added.
 /// Non-JSON or non-object messages are passed through unchanged.
+///
+/// # Safety
+///
+/// `input_ptr` must point to `input_len` initialized bytes and `output_ptr`
+/// must point to a writable buffer large enough to hold the serialized
+/// result. The two regions must not overlap.
 #[no_mangle]
-pub extern "C" fn transform(input_ptr: *const u8, input_len: u32, output_ptr: *mut u8) -> u32 {
+pub unsafe extern "C" fn transform(
+    input_ptr: *const u8,
+    input_len: u32,
+    output_ptr: *mut u8,
+) -> u32 {
     let input = unsafe { std::slice::from_raw_parts(input_ptr, input_len as usize) };
 
     let config = unsafe {
-        match CONFIG.as_ref() {
+        match config() {
             Some(c) => c,
             None => {
                 // No config: pass through
@@ -212,6 +251,63 @@ pub extern "C" fn filter(_input_ptr: *const u8, _input_len: u32) -> u32 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Serializes tests that touch the module-global config set by `init`,
+    /// which the WASM ABI shares across calls.
+    static ABI_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    fn abi_lock() -> std::sync::MutexGuard<'static, ()> {
+        ABI_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    #[test]
+    fn test_abi_init_then_transform_adds_field() {
+        let _guard = abi_lock();
+
+        let cfg = br#"{"field_name":"_ts","format":"epoch_s"}"#;
+        assert_eq!(unsafe { init(cfg.as_ptr(), cfg.len() as u32) }, 1);
+
+        let input = br#"{"a":1}"#;
+        let mut out = vec![0u8; 256];
+        let written = unsafe { transform(input.as_ptr(), input.len() as u32, out.as_mut_ptr()) };
+        let parsed: Value = serde_json::from_slice(&out[..written as usize]).unwrap();
+        assert_eq!(parsed.get("a").unwrap(), 1);
+        assert!(parsed.get("_ts").unwrap().is_number());
+    }
+
+    #[test]
+    fn test_abi_init_falls_back_to_defaults_on_bad_config() {
+        let _guard = abi_lock();
+
+        // Invalid config JSON still initializes with defaults and reports success.
+        let bad = b"not json";
+        assert_eq!(unsafe { init(bad.as_ptr(), bad.len() as u32) }, 1);
+
+        let input = br#"{"a":1}"#;
+        let mut out = vec![0u8; 256];
+        let written = unsafe { transform(input.as_ptr(), input.len() as u32, out.as_mut_ptr()) };
+        let parsed: Value = serde_json::from_slice(&out[..written as usize]).unwrap();
+        assert!(parsed.get("_processed_at").unwrap().is_string());
+    }
+
+    #[test]
+    fn test_abi_transform_passes_through_non_json() {
+        let _guard = abi_lock();
+
+        let cfg = br#"{"field_name":"_ts"}"#;
+        assert_eq!(unsafe { init(cfg.as_ptr(), cfg.len() as u32) }, 1);
+
+        let input = b"plain text";
+        let mut out = vec![0u8; 64];
+        let written = unsafe { transform(input.as_ptr(), input.len() as u32, out.as_mut_ptr()) };
+        assert_eq!(written as usize, input.len());
+        assert_eq!(&out[..written as usize], input.as_slice());
+    }
+
+    #[test]
+    fn test_abi_filter_accepts_everything() {
+        assert_eq!(filter(std::ptr::null(), 0), 1);
+    }
 
     #[test]
     fn test_days_to_ymd_epoch() {
@@ -273,4 +369,3 @@ mod tests {
         ));
     }
 }
-

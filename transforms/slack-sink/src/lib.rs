@@ -11,7 +11,7 @@ use serde_json::Value;
 
 // -- Configuration --
 
-#[derive(Debug, Clone, Deserialize, Serialize)]
+#[derive(Debug, Clone, Default, Deserialize, Serialize)]
 pub struct SlackSinkConfig {
     /// Slack incoming webhook URL.
     pub webhook_url: String,
@@ -30,19 +30,6 @@ pub struct SlackSinkConfig {
     /// Rate limit in messages per second (for host runtime to enforce).
     #[serde(default)]
     pub rate_limit_per_sec: Option<u32>,
-}
-
-impl Default for SlackSinkConfig {
-    fn default() -> Self {
-        Self {
-            webhook_url: String::new(),
-            template: None,
-            channel: None,
-            username: None,
-            icon_emoji: None,
-            rate_limit_per_sec: None,
-        }
-    }
 }
 
 // -- Webhook Request Envelope --
@@ -75,19 +62,25 @@ pub struct SlackSink {
 
 impl SlackSink {
     pub fn new(config: SlackSinkConfig) -> Self {
-        Self { config, buffer: Vec::new(), total_sent: 0 }
+        Self {
+            config,
+            buffer: Vec::new(),
+            total_sent: 0,
+        }
     }
 
     pub fn from_config_str(json: &str) -> Result<Self, String> {
-        let config: SlackSinkConfig = serde_json::from_str(json)
-            .map_err(|e| format!("Invalid config: {e}"))?;
+        let config: SlackSinkConfig =
+            serde_json::from_str(json).map_err(|e| format!("Invalid config: {e}"))?;
         if config.webhook_url.is_empty() {
             return Err("webhook_url is required".to_string());
         }
         Ok(Self::new(config))
     }
 
-    pub fn name(&self) -> &str { "slack-sink" }
+    pub fn name(&self) -> &str {
+        "slack-sink"
+    }
 
     pub fn put(&mut self, records: Vec<Vec<u8>>) {
         for record in records {
@@ -100,7 +93,9 @@ impl SlackSink {
     }
 
     pub fn flush(&mut self) -> Result<Vec<SlackWebhookRequest>, String> {
-        if self.buffer.is_empty() { return Ok(Vec::new()); }
+        if self.buffer.is_empty() {
+            return Ok(Vec::new());
+        }
 
         let mut requests = Vec::new();
         for record in &self.buffer {
@@ -121,9 +116,15 @@ impl SlackSink {
         Ok(requests)
     }
 
-    pub fn buffered_count(&self) -> usize { self.buffer.len() }
-    pub fn total_sent(&self) -> u64 { self.total_sent }
-    pub fn should_flush(&self) -> bool { !self.buffer.is_empty() }
+    pub fn buffered_count(&self) -> usize {
+        self.buffer.len()
+    }
+    pub fn total_sent(&self) -> u64 {
+        self.total_sent
+    }
+    pub fn should_flush(&self) -> bool {
+        !self.buffer.is_empty()
+    }
 
     fn render_text(&self, record: &Value) -> String {
         match &self.config.template {
@@ -144,9 +145,7 @@ impl SlackSink {
                 }
                 result
             }
-            None => {
-                serde_json::to_string(record).unwrap_or_else(|_| record.to_string())
-            }
+            None => serde_json::to_string(record).unwrap_or_else(|_| record.to_string()),
         }
     }
 }
@@ -160,6 +159,17 @@ mod tests {
             webhook_url: "https://hooks.slack.com/services/T00/B00/xxx".to_string(),
             ..Default::default()
         }
+    }
+
+    #[test]
+    fn test_default_config() {
+        let c = SlackSinkConfig::default();
+        assert!(c.webhook_url.is_empty());
+        assert!(c.template.is_none());
+        assert!(c.channel.is_none());
+        assert!(c.username.is_none());
+        assert!(c.icon_emoji.is_none());
+        assert!(c.rate_limit_per_sec.is_none());
     }
 
     #[test]

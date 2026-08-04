@@ -19,6 +19,11 @@ members = [
     "transforms/mysql-sink",
     "transforms/slack-sink",
 ]
+exclude = [
+    # cargo-generate template: its package name is a placeholder, so it must
+    # never be picked up as a workspace member.
+    "connector-sdk/template",
+]
 resolver = "2"
 
 [workspace.package]

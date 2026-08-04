@@ -186,7 +186,7 @@ streamline-cli transforms deploy \
 
 ### Prerequisites
 
-- Rust 1.75+
+- Rust 1.85+ for the full workspace (CLI and registry dependencies use Edition 2024 crates)
 - `wasm32-wasip1` target: `rustup target add wasm32-wasip1`
 
 ### Building
@@ -237,4 +237,3 @@ Apache 2.0. See [LICENSE](LICENSE) for details.
 
 
 <!-- add connector development guide -->
-

@@ -27,8 +27,12 @@ pub struct ElasticsearchSinkConfig {
     pub pipeline: Option<String>,
 }
 
-fn default_url() -> String { "http://localhost:9200".to_string() }
-fn default_bulk_size() -> usize { 500 }
+fn default_url() -> String {
+    "http://localhost:9200".to_string()
+}
+fn default_bulk_size() -> usize {
+    500
+}
 
 impl Default for ElasticsearchSinkConfig {
     fn default() -> Self {
@@ -64,19 +68,25 @@ pub struct ElasticsearchSink {
 
 impl ElasticsearchSink {
     pub fn new(config: ElasticsearchSinkConfig) -> Self {
-        Self { config, buffer: Vec::new(), total_sent: 0 }
+        Self {
+            config,
+            buffer: Vec::new(),
+            total_sent: 0,
+        }
     }
 
     pub fn from_config_str(json: &str) -> Result<Self, String> {
-        let config: ElasticsearchSinkConfig = serde_json::from_str(json)
-            .map_err(|e| format!("Invalid config: {e}"))?;
+        let config: ElasticsearchSinkConfig =
+            serde_json::from_str(json).map_err(|e| format!("Invalid config: {e}"))?;
         if config.index.is_empty() {
             return Err("index is required".to_string());
         }
         Ok(Self::new(config))
     }
 
-    pub fn name(&self) -> &str { "elasticsearch-sink" }
+    pub fn name(&self) -> &str {
+        "elasticsearch-sink"
+    }
 
     pub fn put(&mut self, records: Vec<Vec<u8>>) {
         for record in records {
@@ -103,9 +113,15 @@ impl ElasticsearchSink {
         Ok(requests)
     }
 
-    pub fn buffered_count(&self) -> usize { self.buffer.len() }
-    pub fn total_sent(&self) -> u64 { self.total_sent }
-    pub fn should_flush(&self) -> bool { self.buffer.len() >= self.config.bulk_size }
+    pub fn buffered_count(&self) -> usize {
+        self.buffer.len()
+    }
+    pub fn total_sent(&self) -> u64 {
+        self.total_sent
+    }
+    pub fn should_flush(&self) -> bool {
+        self.buffer.len() >= self.config.bulk_size
+    }
 
     fn build_bulk(&self, records: &[Value]) -> Result<BulkRequest, String> {
         let mut ndjson = String::new();
@@ -124,13 +140,16 @@ impl ElasticsearchSink {
             }
 
             let action_line = serde_json::json!({ "index": action_meta });
-            ndjson.push_str(&serde_json::to_string(&action_line)
-                .map_err(|e| format!("Serialization error: {e}"))?);
+            ndjson.push_str(
+                &serde_json::to_string(&action_line)
+                    .map_err(|e| format!("Serialization error: {e}"))?,
+            );
             ndjson.push('\n');
 
             // Source line
-            ndjson.push_str(&serde_json::to_string(record)
-                .map_err(|e| format!("Serialization error: {e}"))?);
+            ndjson.push_str(
+                &serde_json::to_string(record).map_err(|e| format!("Serialization error: {e}"))?,
+            );
             ndjson.push('\n');
         }
 
@@ -178,7 +197,10 @@ mod tests {
     use super::*;
 
     fn test_config() -> ElasticsearchSinkConfig {
-        ElasticsearchSinkConfig { index: "events".to_string(), ..Default::default() }
+        ElasticsearchSinkConfig {
+            index: "events".to_string(),
+            ..Default::default()
+        }
     }
 
     #[test]

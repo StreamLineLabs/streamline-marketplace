@@ -3,6 +3,7 @@ name = "streamline-marketplace-registry"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+rust-version = "1.85"
 description = "HTTP registry server for the Streamline WASM Transform Marketplace"
 
 [[bin]]

@@ -38,20 +38,21 @@ pub struct RedisSinkConfig {
     pub batch_size: usize,
 }
 
-fn default_url() -> String { "redis://127.0.0.1:6379".to_string() }
-fn default_batch_size() -> usize { 100 }
+fn default_url() -> String {
+    "redis://127.0.0.1:6379".to_string()
+}
+fn default_batch_size() -> usize {
+    100
+}
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum RedisCommandType {
+    #[default]
     Set,
     Xadd,
     Lpush,
     Publish,
-}
-
-impl Default for RedisCommandType {
-    fn default() -> Self { RedisCommandType::Set }
 }
 
 impl Default for RedisSinkConfig {
@@ -75,10 +76,23 @@ impl Default for RedisSinkConfig {
 #[derive(Debug, Clone, Serialize, PartialEq)]
 #[serde(tag = "type", rename_all = "lowercase")]
 pub enum RedisCommand {
-    Set { key: String, value: String, ttl: Option<u64> },
-    Xadd { stream: String, fields: BTreeMap<String, String> },
-    Lpush { key: String, value: String },
-    Publish { channel: String, message: String },
+    Set {
+        key: String,
+        value: String,
+        ttl: Option<u64>,
+    },
+    Xadd {
+        stream: String,
+        fields: BTreeMap<String, String>,
+    },
+    Lpush {
+        key: String,
+        value: String,
+    },
+    Publish {
+        channel: String,
+        message: String,
+    },
 }
 
 /// A batch of Redis commands for the host to execute via pipeline.
@@ -99,12 +113,16 @@ pub struct RedisSink {
 
 impl RedisSink {
     pub fn new(config: RedisSinkConfig) -> Self {
-        Self { config, buffer: Vec::new(), total_sent: 0 }
+        Self {
+            config,
+            buffer: Vec::new(),
+            total_sent: 0,
+        }
     }
 
     pub fn from_config_str(json: &str) -> Result<Self, String> {
-        let config: RedisSinkConfig = serde_json::from_str(json)
-            .map_err(|e| format!("Invalid config: {e}"))?;
+        let config: RedisSinkConfig =
+            serde_json::from_str(json).map_err(|e| format!("Invalid config: {e}"))?;
 
         match config.command {
             RedisCommandType::Set if config.key_field.is_none() => {
@@ -125,7 +143,9 @@ impl RedisSink {
         Ok(Self::new(config))
     }
 
-    pub fn name(&self) -> &str { "redis-sink" }
+    pub fn name(&self) -> &str {
+        "redis-sink"
+    }
 
     pub fn put(&mut self, records: Vec<Vec<u8>>) {
         for record in records {
@@ -163,21 +183,34 @@ impl RedisSink {
         Ok(vec![envelope])
     }
 
-    pub fn buffered_count(&self) -> usize { self.buffer.len() }
-    pub fn total_sent(&self) -> u64 { self.total_sent }
-    pub fn should_flush(&self) -> bool { self.buffer.len() >= self.config.batch_size }
+    pub fn buffered_count(&self) -> usize {
+        self.buffer.len()
+    }
+    pub fn total_sent(&self) -> u64 {
+        self.total_sent
+    }
+    pub fn should_flush(&self) -> bool {
+        self.buffer.len() >= self.config.batch_size
+    }
 
     // -- Command Builders --
 
     fn build_set(&self, record: &Value) -> Result<RedisCommand, String> {
         let key = self.extract_key(record)?;
-        let value = serde_json::to_string(record)
-            .map_err(|e| format!("Serialization error: {e}"))?;
-        Ok(RedisCommand::Set { key, value, ttl: self.config.ttl_secs })
+        let value =
+            serde_json::to_string(record).map_err(|e| format!("Serialization error: {e}"))?;
+        Ok(RedisCommand::Set {
+            key,
+            value,
+            ttl: self.config.ttl_secs,
+        })
     }
 
     fn build_xadd(&self, record: &Value) -> Result<RedisCommand, String> {
-        let stream = self.config.stream_name.clone()
+        let stream = self
+            .config
+            .stream_name
+            .clone()
             .ok_or_else(|| "stream_name is required for XADD".to_string())?;
         let mut fields = BTreeMap::new();
         match record.as_object() {
@@ -201,16 +234,19 @@ impl RedisSink {
 
     fn build_lpush(&self, record: &Value) -> Result<RedisCommand, String> {
         let key = self.extract_key(record)?;
-        let value = serde_json::to_string(record)
-            .map_err(|e| format!("Serialization error: {e}"))?;
+        let value =
+            serde_json::to_string(record).map_err(|e| format!("Serialization error: {e}"))?;
         Ok(RedisCommand::Lpush { key, value })
     }
 
     fn build_publish(&self, record: &Value) -> Result<RedisCommand, String> {
-        let channel = self.config.channel.clone()
+        let channel = self
+            .config
+            .channel
+            .clone()
             .ok_or_else(|| "channel is required for PUBLISH".to_string())?;
-        let message = serde_json::to_string(record)
-            .map_err(|e| format!("Serialization error: {e}"))?;
+        let message =
+            serde_json::to_string(record).map_err(|e| format!("Serialization error: {e}"))?;
         Ok(RedisCommand::Publish { channel, message })
     }
 
@@ -219,7 +255,8 @@ impl RedisSink {
             Some(field) => {
                 let mut current = record;
                 for part in field.split('.') {
-                    current = current.get(part)
+                    current = current
+                        .get(part)
                         .ok_or_else(|| format!("Key field '{field}' not found in record"))?;
                 }
                 match current {
@@ -272,19 +309,25 @@ mod tests {
     #[test]
     fn test_from_config_str_set_missing_key_field() {
         let json = r#"{"command":"set"}"#;
-        assert!(RedisSink::from_config_str(json).unwrap_err().contains("key_field is required"));
+        assert!(RedisSink::from_config_str(json)
+            .unwrap_err()
+            .contains("key_field is required"));
     }
 
     #[test]
     fn test_from_config_str_publish_missing_channel() {
         let json = r#"{"command":"publish"}"#;
-        assert!(RedisSink::from_config_str(json).unwrap_err().contains("channel is required"));
+        assert!(RedisSink::from_config_str(json)
+            .unwrap_err()
+            .contains("channel is required"));
     }
 
     #[test]
     fn test_from_config_str_xadd_missing_stream() {
         let json = r#"{"command":"xadd"}"#;
-        assert!(RedisSink::from_config_str(json).unwrap_err().contains("stream_name is required"));
+        assert!(RedisSink::from_config_str(json)
+            .unwrap_err()
+            .contains("stream_name is required"));
     }
 
     #[test]

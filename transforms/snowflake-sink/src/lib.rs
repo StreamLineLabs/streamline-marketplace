@@ -31,7 +31,9 @@ pub struct SnowflakeSinkConfig {
     pub batch_size: usize,
 }
 
-fn default_batch_size() -> usize { 1000 }
+fn default_batch_size() -> usize {
+    1000
+}
 
 impl Default for SnowflakeSinkConfig {
     fn default() -> Self {
@@ -72,19 +74,31 @@ pub struct SnowflakeSink {
 
 impl SnowflakeSink {
     pub fn new(config: SnowflakeSinkConfig) -> Self {
-        Self { config, buffer: Vec::new(), total_sent: 0 }
+        Self {
+            config,
+            buffer: Vec::new(),
+            total_sent: 0,
+        }
     }
 
     pub fn from_config_str(json: &str) -> Result<Self, String> {
-        let config: SnowflakeSinkConfig = serde_json::from_str(json)
-            .map_err(|e| format!("Invalid config: {e}"))?;
-        if config.account.is_empty() { return Err("account is required".to_string()); }
-        if config.database.is_empty() { return Err("database is required".to_string()); }
-        if config.table.is_empty() { return Err("table is required".to_string()); }
+        let config: SnowflakeSinkConfig =
+            serde_json::from_str(json).map_err(|e| format!("Invalid config: {e}"))?;
+        if config.account.is_empty() {
+            return Err("account is required".to_string());
+        }
+        if config.database.is_empty() {
+            return Err("database is required".to_string());
+        }
+        if config.table.is_empty() {
+            return Err("table is required".to_string());
+        }
         Ok(Self::new(config))
     }
 
-    pub fn name(&self) -> &str { "snowflake-sink" }
+    pub fn name(&self) -> &str {
+        "snowflake-sink"
+    }
 
     pub fn put(&mut self, records: Vec<Vec<u8>>) {
         for record in records {
@@ -97,7 +111,9 @@ impl SnowflakeSink {
     }
 
     pub fn flush(&mut self) -> Result<Vec<SnowflakeLoadCommand>, String> {
-        if self.buffer.is_empty() { return Ok(Vec::new()); }
+        if self.buffer.is_empty() {
+            return Ok(Vec::new());
+        }
 
         let mut commands = Vec::new();
         for chunk in self.buffer.chunks(self.config.batch_size.max(1)) {
@@ -119,15 +135,23 @@ impl SnowflakeSink {
         Ok(commands)
     }
 
-    pub fn buffered_count(&self) -> usize { self.buffer.len() }
-    pub fn total_sent(&self) -> u64 { self.total_sent }
-    pub fn should_flush(&self) -> bool { self.buffer.len() >= self.config.batch_size }
+    pub fn buffered_count(&self) -> usize {
+        self.buffer.len()
+    }
+    pub fn total_sent(&self) -> u64 {
+        self.total_sent
+    }
+    pub fn should_flush(&self) -> bool {
+        self.buffer.len() >= self.config.batch_size
+    }
 
     fn format_ndjson(&self, records: &[Value]) -> Result<String, String> {
         let mut out = String::new();
         for r in records {
-            out.push_str(&serde_json::to_string(r)
-                .map_err(|e| format!("NDJSON serialization error: {e}"))?);
+            out.push_str(
+                &serde_json::to_string(r)
+                    .map_err(|e| format!("NDJSON serialization error: {e}"))?,
+            );
             out.push('\n');
         }
         Ok(out)

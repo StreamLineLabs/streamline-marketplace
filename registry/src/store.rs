@@ -63,9 +63,8 @@ impl DataStore {
 
         // The flat file is Vec<TransformEntry>; the server file is the nested map.
         // Try nested first, fall back to flat.
-        if let Ok(nested) = serde_json::from_str::<
-            BTreeMap<String, BTreeMap<String, TransformEntry>>,
-        >(&content)
+        if let Ok(nested) =
+            serde_json::from_str::<BTreeMap<String, BTreeMap<String, TransformEntry>>>(&content)
         {
             return nested;
         }
@@ -126,30 +125,26 @@ mod tests {
         std::fs::create_dir_all(&tmp).unwrap();
 
         let mut store = DataStore::load(tmp.to_str().unwrap());
-        store
-            .transforms
-            .entry("test".into())
-            .or_default()
-            .insert(
-                "0.1.0".into(),
-                TransformEntry {
-                    name: "test".into(),
-                    version: "0.1.0".into(),
-                    description: "d".into(),
-                    author: "a".into(),
-                    downloads: 0,
-                    checksum: "".into(),
-                    categories: vec![],
-                    min_streamline_version: "".into(),
-                    wasm_url: "".into(),
-                    input_format: "json".into(),
-                    output_format: "json".into(),
-                    tags: vec![],
-                    license: "".into(),
-                    repository_url: "".into(),
-                    config_schema: serde_json::Value::Null,
-                },
-            );
+        store.transforms.entry("test".into()).or_default().insert(
+            "0.1.0".into(),
+            TransformEntry {
+                name: "test".into(),
+                version: "0.1.0".into(),
+                description: "d".into(),
+                author: "a".into(),
+                downloads: 0,
+                checksum: "".into(),
+                categories: vec![],
+                min_streamline_version: "".into(),
+                wasm_url: "".into(),
+                input_format: "json".into(),
+                output_format: "json".into(),
+                tags: vec![],
+                license: "".into(),
+                repository_url: "".into(),
+                config_schema: serde_json::Value::Null,
+            },
+        );
         store.save().unwrap();
 
         let store2 = DataStore::load(tmp.to_str().unwrap());
@@ -173,8 +168,11 @@ mod tests {
 
 // add connector dependency resolution engine
 
-
 /// Metadata for a registered transform in the marketplace.
+///
+/// Part of the store's published API surface; not yet consumed by the HTTP
+/// handlers, which still serve the flat `TransformEntry` shape.
+#[allow(dead_code)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TransformMetadata {
     pub name: String,
@@ -186,6 +184,8 @@ pub struct TransformMetadata {
     pub verified: bool,
 }
 
+/// Canonical category taxonomy for [`TransformMetadata`].
+#[allow(dead_code)]
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum TransformCategory {
     Sink,

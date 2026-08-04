@@ -1,5 +1,10 @@
 //! WASM security verification, sandboxing policies, and version management.
 
+// The auditor/version-manager API is exercised by this module's unit tests but
+// is not yet wired into the registry binary's publish path, so its items look
+// unused to the non-test build.
+#![allow(dead_code)]
+
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
 
@@ -34,7 +39,7 @@ impl Default for WasmSecurityPolicy {
     fn default() -> Self {
         Self {
             max_binary_size_bytes: 10 * 1024 * 1024, // 10 MB
-            max_memory_pages: 256,                    // 16 MB WASM memory
+            max_memory_pages: 256,                   // 16 MB WASM memory
             max_execution_time_ms: 5000,
             allowed_imports: SecurityAuditor::default_allowed_imports(),
             denied_imports: HashSet::new(),
@@ -549,7 +554,7 @@ mod tests {
         buf.push(0x02);
         let mut import_body = Vec::new();
         leb128_push(&mut import_body, 1); // count = 1
-        // module name
+                                          // module name
         leb128_push(&mut import_body, module.len() as u32);
         import_body.extend_from_slice(module.as_bytes());
         // import name
@@ -567,10 +572,7 @@ mod tests {
 
     /// Build a WASM binary with a single export.
     fn wasm_with_export(name: &str) -> Vec<u8> {
-        let mut buf = vec![
-            0x00, 0x61, 0x73, 0x6D,
-            0x01, 0x00, 0x00, 0x00,
-        ];
+        let mut buf = vec![0x00, 0x61, 0x73, 0x6D, 0x01, 0x00, 0x00, 0x00];
 
         // ── Type section ──
         buf.push(0x01);
@@ -672,14 +674,13 @@ mod tests {
 
     #[test]
     fn test_audit_oversized_binary() {
-        let mut policy = WasmSecurityPolicy::default();
-        policy.max_binary_size_bytes = 4;
+        let policy = WasmSecurityPolicy {
+            max_binary_size_bytes: 4,
+            ..Default::default()
+        };
         let auditor = SecurityAuditor::new(policy);
         let audit = auditor.audit_binary("big", &minimal_wasm());
-        assert!(audit
-            .violations
-            .iter()
-            .any(|v| v.rule == "max_binary_size"));
+        assert!(audit.violations.iter().any(|v| v.rule == "max_binary_size"));
     }
 
     // ── Audit: imports ───────────────────────────────────────────────────
@@ -723,8 +724,10 @@ mod tests {
 
     #[test]
     fn test_audit_strict_unlisted_import() {
-        let mut policy = WasmSecurityPolicy::default();
-        policy.sandbox_level = SandboxLevel::Strict;
+        let policy = WasmSecurityPolicy {
+            sandbox_level: SandboxLevel::Strict,
+            ..Default::default()
+        };
         let auditor = SecurityAuditor::new(policy);
         let wasm = wasm_with_import("env", "custom_func");
         let audit = auditor.audit_binary("strict", &wasm);
@@ -848,4 +851,3 @@ mod tests {
         assert_eq!(restored.passed, audit.passed);
     }
 }
-

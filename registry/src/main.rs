@@ -154,15 +154,14 @@ async fn main() {
         )
         .route("/api/v1/categories", get(list_categories))
         .route("/healthz", get(healthz))
-        .layer(
-            tower_http::cors::CorsLayer::permissive()
-        )
+        .layer(tower_http::cors::CorsLayer::permissive())
         .with_state(state);
 
     let bind = std::env::var("REGISTRY_BIND").unwrap_or_else(|_| "0.0.0.0:8080".into());
     tracing::info!("Marketplace registry listening on {}", bind);
 
-    let listener = tokio::net::TcpListener::bind(&bind).await
+    let listener = tokio::net::TcpListener::bind(&bind)
+        .await
         .expect("Failed to bind registry TCP listener — check REGISTRY_BIND address");
     if let Err(e) = axum::serve(listener, app).await {
         tracing::error!("Marketplace registry exited with error: {e}");
@@ -194,7 +193,10 @@ async fn list_transforms(
     let mut latest: HashMap<String, TransformEntry> = HashMap::new();
     for entry in &results {
         let existing = latest.get(&entry.name);
-        if existing.map_or(true, |e| version_gt(&entry.version, &e.version)) {
+        if match existing {
+            Some(e) => version_gt(&entry.version, &e.version),
+            None => true,
+        } {
             latest.insert(entry.name.clone(), entry.clone());
         }
     }
@@ -314,7 +316,7 @@ async fn publish_transform(
         .get("authorization")
         .and_then(|v| v.to_str().ok())
         .unwrap_or("");
-    if !auth.starts_with("Bearer ") || &auth[7..] != expected_token {
+    if !auth.starts_with("Bearer ") || auth[7..] != expected_token {
         return Err((
             StatusCode::UNAUTHORIZED,
             "Invalid or missing Authorization header".into(),
@@ -335,10 +337,10 @@ async fn publish_transform(
                     .text()
                     .await
                     .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
-                meta = Some(
-                    serde_json::from_str(&data)
-                        .map_err(|e| (StatusCode::BAD_REQUEST, format!("Invalid metadata: {}", e)))?,
-                );
+                meta =
+                    Some(serde_json::from_str(&data).map_err(|e| {
+                        (StatusCode::BAD_REQUEST, format!("Invalid metadata: {}", e))
+                    })?);
             }
             Some("wasm") => {
                 wasm_bytes = Some(
@@ -354,8 +356,7 @@ async fn publish_transform(
     }
 
     let meta = meta.ok_or((StatusCode::BAD_REQUEST, "Missing 'metadata' field".into()))?;
-    let wasm_bytes =
-        wasm_bytes.ok_or((StatusCode::BAD_REQUEST, "Missing 'wasm' field".into()))?;
+    let wasm_bytes = wasm_bytes.ok_or((StatusCode::BAD_REQUEST, "Missing 'wasm' field".into()))?;
 
     // Validate name
     if meta.name.is_empty() || meta.version.is_empty() {
@@ -377,10 +378,7 @@ async fn publish_transform(
         if versions.contains_key(&meta.version) {
             return Err((
                 StatusCode::CONFLICT,
-                format!(
-                    "Version {} of '{}' already exists",
-                    meta.version, meta.name
-                ),
+                format!("Version {} of '{}' already exists", meta.version, meta.name),
             ));
         }
     }
@@ -405,10 +403,7 @@ async fn publish_transform(
         checksum,
         categories: meta.categories,
         min_streamline_version: meta.min_streamline_version,
-        wasm_url: format!(
-            "/api/v1/transforms/{}/{}/download",
-            meta.name, meta.version
-        ),
+        wasm_url: format!("/api/v1/transforms/{}/{}/download", meta.name, meta.version),
         input_format: meta.input_format,
         output_format: meta.output_format,
         tags: meta.tags,

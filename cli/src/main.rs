@@ -17,7 +17,7 @@ use colored::Colorize;
 use serde::{Deserialize, Serialize};
 use std::fs;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 /// Default registry URL (local server; fall back to GitHub raw if server is not running)
 const DEFAULT_REGISTRY_URL: &str = "http://localhost:8080";
@@ -29,7 +29,10 @@ const FALLBACK_REGISTRY_URL: &str =
 /// Streamline WASM Transform Marketplace
 #[derive(Parser)]
 #[command(name = "streamline-marketplace")]
-#[command(version, about = "Discover, install, and publish WASM transforms for Streamline")]
+#[command(
+    version,
+    about = "Discover, install, and publish WASM transforms for Streamline"
+)]
 struct Cli {
     /// Registry URL (overrides default)
     #[arg(long, env = "STREAMLINE_MARKETPLACE_URL")]
@@ -155,18 +158,15 @@ fn transforms_dir(cli: &Cli) -> PathBuf {
 
 /// Load the registry from the API server, a URL, or a local file.
 fn load_registry(cli: &Cli) -> Result<Vec<TransformEntry>, String> {
-    let url = cli
-        .registry_url
-        .as_deref()
-        .unwrap_or(DEFAULT_REGISTRY_URL);
+    let url = cli.registry_url.as_deref().unwrap_or(DEFAULT_REGISTRY_URL);
 
     // Check if it is a local file path
     let path = PathBuf::from(url);
     if path.exists() {
         let content = fs::read_to_string(&path)
             .map_err(|e| format!("Failed to read registry file {}: {}", path.display(), e))?;
-        let entries: Vec<TransformEntry> =
-            serde_json::from_str(&content).map_err(|e| format!("Failed to parse registry: {}", e))?;
+        let entries: Vec<TransformEntry> = serde_json::from_str(&content)
+            .map_err(|e| format!("Failed to parse registry: {}", e))?;
         return Ok(entries);
     }
 
@@ -363,10 +363,7 @@ fn cmd_install(cli: &Cli, name_with_version: &str, force: bool) {
                     existing.version,
                     existing.wasm_path
                 );
-                println!(
-                    "    Use {} to reinstall.",
-                    "--force".yellow()
-                );
+                println!("    Use {} to reinstall.", "--force".yellow());
                 return;
             }
         }
@@ -382,12 +379,9 @@ fn cmd_install(cli: &Cli, name_with_version: &str, force: bool) {
     };
 
     // Find the transform
-    let entry = registry.iter().find(|e| {
-        e.name == name
-            && requested_version
-                .map(|v| e.version == v)
-                .unwrap_or(true)
-    });
+    let entry = registry
+        .iter()
+        .find(|e| e.name == name && requested_version.map(|v| e.version == v).unwrap_or(true));
 
     let entry = match entry {
         Some(e) => e,
@@ -434,7 +428,11 @@ fn cmd_install(cli: &Cli, name_with_version: &str, force: bool) {
     {
         Ok(c) => c,
         Err(e) => {
-            eprintln!("{}: Failed to create HTTP client: {}", "Error".red().bold(), e);
+            eprintln!(
+                "{}: Failed to create HTTP client: {}",
+                "Error".red().bold(),
+                e
+            );
             std::process::exit(1);
         }
     };
@@ -469,11 +467,7 @@ fn cmd_install(cli: &Cli, name_with_version: &str, force: bool) {
     let wasm_bytes = match response.bytes() {
         Ok(b) => b.to_vec(),
         Err(e) => {
-            eprintln!(
-                "{}: Failed to read WASM bytes: {}",
-                "Error".red().bold(),
-                e
-            );
+            eprintln!("{}: Failed to read WASM bytes: {}", "Error".red().bold(), e);
             std::process::exit(1);
         }
     };
@@ -497,9 +491,7 @@ fn cmd_install(cli: &Cli, name_with_version: &str, force: bool) {
     }
 
     // Save to transforms directory
-    let install_dir = transforms_dir(cli)
-        .join(&entry.name)
-        .join(&entry.version);
+    let install_dir = transforms_dir(cli).join(&entry.name).join(&entry.version);
 
     if let Err(e) = fs::create_dir_all(&install_dir) {
         eprintln!(
@@ -526,11 +518,7 @@ fn cmd_install(cli: &Cli, name_with_version: &str, force: bool) {
     };
 
     if let Err(e) = file.write_all(&wasm_bytes) {
-        eprintln!(
-            "{}: Failed to write WASM file: {}",
-            "Error".red().bold(),
-            e
-        );
+        eprintln!("{}: Failed to write WASM file: {}", "Error".red().bold(), e);
         std::process::exit(1);
     }
 
@@ -568,20 +556,21 @@ fn cmd_install(cli: &Cli, name_with_version: &str, force: bool) {
     println!("    WASM module: {}", wasm_path.display());
     println!();
     println!("    Deploy with:");
-    println!(
-        "      streamline-cli transforms deploy \\",
-    );
+    println!("      streamline-cli transforms deploy \\",);
     println!("        --name my-transform \\");
-    println!(
-        "        --wasm {} \\",
-        wasm_path.display()
-    );
+    println!("        --wasm {} \\", wasm_path.display());
     println!("        --input <source-topic> \\");
     println!("        --output <dest-topic>");
 }
 
 /// Execute the `publish` command.
-fn cmd_publish(cli: &Cli, path: &PathBuf, name: &Option<String>, version: &Option<String>, wasm_url: &Option<String>) {
+fn cmd_publish(
+    cli: &Cli,
+    path: &Path,
+    name: &Option<String>,
+    version: &Option<String>,
+    wasm_url: &Option<String>,
+) {
     let cargo_toml_path = path.join("Cargo.toml");
     if !cargo_toml_path.exists() {
         eprintln!(
@@ -595,11 +584,7 @@ fn cmd_publish(cli: &Cli, path: &PathBuf, name: &Option<String>, version: &Optio
     let cargo_content = match fs::read_to_string(&cargo_toml_path) {
         Ok(c) => c,
         Err(e) => {
-            eprintln!(
-                "{}: Failed to read Cargo.toml: {}",
-                "Error".red().bold(),
-                e
-            );
+            eprintln!("{}: Failed to read Cargo.toml: {}", "Error".red().bold(), e);
             std::process::exit(1);
         }
     };
@@ -666,9 +651,7 @@ fn cmd_publish(cli: &Cli, path: &PathBuf, name: &Option<String>, version: &Optio
             "Warning:".yellow().bold(),
             wasm_path.display()
         );
-        println!(
-            "    Build with: cargo build --target wasm32-wasip1 --release"
-        );
+        println!("    Build with: cargo build --target wasm32-wasip1 --release");
         String::new()
     };
 
@@ -746,10 +729,7 @@ fn cmd_publish(cli: &Cli, path: &PathBuf, name: &Option<String>, version: &Optio
                 .send()
             {
                 Ok(resp) if resp.status().is_success() => {
-                    println!(
-                        "\n{} Published to registry server!",
-                        "==>".green().bold()
-                    );
+                    println!("\n{} Published to registry server!", "==>".green().bold());
                     published_to_server = true;
                 }
                 Ok(resp) => {
@@ -797,9 +777,7 @@ fn cmd_publish(cli: &Cli, path: &PathBuf, name: &Option<String>, version: &Optio
             "    To publish, submit a PR adding this entry to {}",
             "registry/transforms.json".bold()
         );
-        println!(
-            "    in the streamline-marketplace repository, and upload the .wasm"
-        );
+        println!("    in the streamline-marketplace repository, and upload the .wasm");
         println!("    file to your release URL.");
         println!();
         println!("    Or start the registry server and re-run this command.");
@@ -865,19 +843,13 @@ fn cmd_info(cli: &Cli, name: &str) {
         println!("  Name:        {}", entry.name.bold().cyan());
         println!("  Version:     {}", entry.version);
         println!("  Author:      {}", entry.author);
-        println!(
-            "  Categories:  {}",
-            entry.categories.join(", ").yellow()
-        );
+        println!("  Categories:  {}", entry.categories.join(", ").yellow());
         println!("  License:     {}", entry.license);
         println!("  Input:       {}", entry.input_format);
         println!("  Output:      {}", entry.output_format);
         println!("  Downloads:   {}", entry.downloads);
         if !entry.min_streamline_version.is_empty() {
-            println!(
-                "  Min Version: {}",
-                entry.min_streamline_version
-            );
+            println!("  Min Version: {}", entry.min_streamline_version);
         }
         if !entry.checksum.is_empty() {
             println!("  Checksum:    {}", entry.checksum.dimmed());
@@ -1090,16 +1062,16 @@ fn version_satisfies(version: &str, constraint: &str) -> bool {
         return true;
     }
 
-    let (op, ver_str) = if constraint.starts_with(">=") {
-        (">=", constraint[2..].trim())
-    } else if constraint.starts_with("<=") {
-        ("<=", constraint[2..].trim())
-    } else if constraint.starts_with('>') {
-        (">", constraint[1..].trim())
-    } else if constraint.starts_with('<') {
-        ("<", constraint[1..].trim())
-    } else if constraint.starts_with('=') {
-        ("=", constraint[1..].trim())
+    let (op, ver_str) = if let Some(rest) = constraint.strip_prefix(">=") {
+        (">=", rest.trim())
+    } else if let Some(rest) = constraint.strip_prefix("<=") {
+        ("<=", rest.trim())
+    } else if let Some(rest) = constraint.strip_prefix('>') {
+        (">", rest.trim())
+    } else if let Some(rest) = constraint.strip_prefix('<') {
+        ("<", rest.trim())
+    } else if let Some(rest) = constraint.strip_prefix('=') {
+        ("=", rest.trim())
     } else {
         ("=", constraint)
     };
@@ -1273,7 +1245,10 @@ mod tests {
         if registry_path.exists() {
             let content = std::fs::read_to_string(&registry_path).unwrap();
             let entries: Vec<TransformEntry> = serde_json::from_str(&content).unwrap();
-            assert!(entries.len() >= 11, "Registry should have at least 11 entries");
+            assert!(
+                entries.len() >= 11,
+                "Registry should have at least 11 entries"
+            );
 
             // Verify each entry has required fields including new metadata
             for entry in &entries {
@@ -1281,21 +1256,41 @@ mod tests {
                 assert!(!entry.version.is_empty());
                 assert!(!entry.description.is_empty());
                 assert!(!entry.wasm_url.is_empty());
-                assert!(!entry.categories.is_empty(), "Entry '{}' must have categories", entry.name);
-                assert!(!entry.min_streamline_version.is_empty(), "Entry '{}' must have min_streamline_version", entry.name);
-                assert!(!entry.checksum.is_empty(), "Entry '{}' must have checksum", entry.name);
+                assert!(
+                    !entry.categories.is_empty(),
+                    "Entry '{}' must have categories",
+                    entry.name
+                );
+                assert!(
+                    !entry.min_streamline_version.is_empty(),
+                    "Entry '{}' must have min_streamline_version",
+                    entry.name
+                );
+                assert!(
+                    !entry.checksum.is_empty(),
+                    "Entry '{}' must have checksum",
+                    entry.name
+                );
             }
 
             // Verify valid category values
             let valid_categories = [
-                "filtering", "enrichment", "routing", "security", "analytics", "format-conversion", "sink",
+                "filtering",
+                "enrichment",
+                "routing",
+                "security",
+                "analytics",
+                "format-conversion",
+                "sink",
             ];
             for entry in &entries {
                 for cat in &entry.categories {
                     assert!(
                         valid_categories.contains(&cat.as_str()),
                         "Entry '{}' has invalid category '{}'. Valid: {:?}",
-                        entry.name, cat, valid_categories
+                        entry.name,
+                        cat,
+                        valid_categories
                     );
                 }
             }
@@ -1323,6 +1318,25 @@ mod tests {
         assert!(version_satisfies("0.1.0", "0.1.0"));
         assert!(version_satisfies("0.1.0", "=0.1.0"));
         assert!(version_satisfies("1.0.0", ""));
+    }
+
+    #[test]
+    fn test_version_satisfies_operator_prefixes_and_whitespace() {
+        // `>=`/`<=` must win over the single-character `>`/`<` prefixes.
+        assert!(!version_satisfies("0.1.0", ">=0.2.0"));
+        assert!(!version_satisfies("0.3.0", "<=0.2.0"));
+
+        // Surrounding and inner whitespace is tolerated.
+        assert!(version_satisfies("0.2.0", "  >= 0.1.0  "));
+        assert!(version_satisfies("0.1.0", "<= 0.1.0"));
+        assert!(version_satisfies("0.2.0", "> 0.1.0"));
+        assert!(version_satisfies("0.1.0", "< 0.2.0"));
+        assert!(version_satisfies("0.1.0", "= 0.1.0"));
+        assert!(version_satisfies("1.0.0", "   "));
+
+        // Missing components default to zero.
+        assert!(version_satisfies("1.0.0", ">=1"));
+        assert!(version_satisfies("1.2.0", "1.2"));
     }
 
     #[test]
@@ -1376,7 +1390,7 @@ mod tests {
 
     #[test]
     fn test_search_by_category_match() {
-        let entries = vec![
+        let entries = [
             make_test_entry("a", &["filtering"]),
             make_test_entry("b", &["routing"]),
             make_test_entry("c", &["filtering", "analytics"]),
@@ -1435,8 +1449,13 @@ mod tests {
     #[test]
     fn test_cli_parse_search_with_category() {
         let cli = Cli::try_parse_from([
-            "streamline-marketplace", "search", "filter", "--category", "filtering",
-        ]).unwrap();
+            "streamline-marketplace",
+            "search",
+            "filter",
+            "--category",
+            "filtering",
+        ])
+        .unwrap();
         match cli.command {
             Commands::Search { query, category } => {
                 assert_eq!(query, "filter");
@@ -1448,7 +1467,8 @@ mod tests {
 
     #[test]
     fn test_cli_parse_install_command() {
-        let cli = Cli::try_parse_from(["streamline-marketplace", "install", "json-filter"]).unwrap();
+        let cli =
+            Cli::try_parse_from(["streamline-marketplace", "install", "json-filter"]).unwrap();
         match cli.command {
             Commands::Install { name, force } => {
                 assert_eq!(name, "json-filter");
@@ -1461,8 +1481,12 @@ mod tests {
     #[test]
     fn test_cli_parse_install_with_force() {
         let cli = Cli::try_parse_from([
-            "streamline-marketplace", "install", "json-filter", "--force",
-        ]).unwrap();
+            "streamline-marketplace",
+            "install",
+            "json-filter",
+            "--force",
+        ])
+        .unwrap();
         match cli.command {
             Commands::Install { name, force } => {
                 assert_eq!(name, "json-filter");
@@ -1474,9 +1498,8 @@ mod tests {
 
     #[test]
     fn test_cli_parse_install_versioned() {
-        let cli = Cli::try_parse_from([
-            "streamline-marketplace", "install", "pii-redactor@0.2.0",
-        ]).unwrap();
+        let cli = Cli::try_parse_from(["streamline-marketplace", "install", "pii-redactor@0.2.0"])
+            .unwrap();
         match cli.command {
             Commands::Install { name, .. } => {
                 assert_eq!(name, "pii-redactor@0.2.0");
@@ -1521,16 +1544,27 @@ mod tests {
     #[test]
     fn test_cli_parse_registry_url_flag() {
         let cli = Cli::try_parse_from([
-            "streamline-marketplace", "--registry-url", "https://custom.example.com", "list",
-        ]).unwrap();
-        assert_eq!(cli.registry_url, Some("https://custom.example.com".to_string()));
+            "streamline-marketplace",
+            "--registry-url",
+            "https://custom.example.com",
+            "list",
+        ])
+        .unwrap();
+        assert_eq!(
+            cli.registry_url,
+            Some("https://custom.example.com".to_string())
+        );
     }
 
     #[test]
     fn test_cli_parse_transforms_dir_flag() {
         let cli = Cli::try_parse_from([
-            "streamline-marketplace", "--transforms-dir", "/tmp/transforms", "list",
-        ]).unwrap();
+            "streamline-marketplace",
+            "--transforms-dir",
+            "/tmp/transforms",
+            "list",
+        ])
+        .unwrap();
         assert_eq!(cli.transforms_dir, Some(PathBuf::from("/tmp/transforms")));
     }
 
@@ -1623,9 +1657,15 @@ mod tests {
         } else if wasm_url.starts_with("http") {
             wasm_url.to_string()
         } else {
-            format!("{}/api/v1/transforms/{}/{}/download", registry_base, "json-filter", "0.1.0")
+            format!(
+                "{}/api/v1/transforms/{}/{}/download",
+                registry_base, "json-filter", "0.1.0"
+            )
         };
-        assert_eq!(download_url, "http://localhost:8080/api/v1/transforms/json-filter/0.1.0/download");
+        assert_eq!(
+            download_url,
+            "http://localhost:8080/api/v1/transforms/json-filter/0.1.0/download"
+        );
     }
 
     #[test]
@@ -1637,7 +1677,10 @@ mod tests {
         } else if wasm_url.starts_with("http") {
             wasm_url.to_string()
         } else {
-            format!("{}/api/v1/transforms/{}/{}/download", registry_base, "json-filter", "0.1.0")
+            format!(
+                "{}/api/v1/transforms/{}/{}/download",
+                registry_base, "json-filter", "0.1.0"
+            )
         };
         assert_eq!(download_url, "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/json_filter.wasm");
     }
@@ -1653,9 +1696,15 @@ mod tests {
         } else if wasm_url.starts_with("http") {
             wasm_url.to_string()
         } else {
-            format!("{}/api/v1/transforms/{}/{}/download", registry_base, name, version)
+            format!(
+                "{}/api/v1/transforms/{}/{}/download",
+                registry_base, name, version
+            )
         };
-        assert_eq!(download_url, "http://localhost:8080/api/v1/transforms/json-filter/0.1.0/download");
+        assert_eq!(
+            download_url,
+            "http://localhost:8080/api/v1/transforms/json-filter/0.1.0/download"
+        );
     }
 
     // ── Default Constants ────────────────────────────────────────────────

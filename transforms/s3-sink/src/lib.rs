@@ -36,20 +36,23 @@ pub struct S3SinkConfig {
     pub file_extension: Option<String>,
 }
 
-fn default_region() -> String { "us-east-1".to_string() }
-fn default_prefix() -> String { "streamline/".to_string() }
-fn default_batch_size() -> usize { 1000 }
+fn default_region() -> String {
+    "us-east-1".to_string()
+}
+fn default_prefix() -> String {
+    "streamline/".to_string()
+}
+fn default_batch_size() -> usize {
+    1000
+}
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "lowercase")]
 pub enum OutputFormat {
+    #[default]
     Json,
     Ndjson,
     Csv,
-}
-
-impl Default for OutputFormat {
-    fn default() -> Self { OutputFormat::Json }
 }
 
 impl Default for S3SinkConfig {
@@ -92,17 +95,26 @@ pub struct S3Sink {
 
 impl S3Sink {
     pub fn new(config: S3SinkConfig) -> Self {
-        Self { config, buffer: Vec::new(), total_sent: 0, file_counter: 0 }
+        Self {
+            config,
+            buffer: Vec::new(),
+            total_sent: 0,
+            file_counter: 0,
+        }
     }
 
     pub fn from_config_str(json: &str) -> Result<Self, String> {
-        let config: S3SinkConfig = serde_json::from_str(json)
-            .map_err(|e| format!("Invalid config: {e}"))?;
-        if config.bucket.is_empty() { return Err("bucket is required".to_string()); }
+        let config: S3SinkConfig =
+            serde_json::from_str(json).map_err(|e| format!("Invalid config: {e}"))?;
+        if config.bucket.is_empty() {
+            return Err("bucket is required".to_string());
+        }
         Ok(Self::new(config))
     }
 
-    pub fn name(&self) -> &str { "s3-sink" }
+    pub fn name(&self) -> &str {
+        "s3-sink"
+    }
 
     pub fn put(&mut self, records: Vec<Vec<u8>>) {
         for record in records {
@@ -115,7 +127,9 @@ impl S3Sink {
     }
 
     pub fn flush(&mut self) -> Result<Vec<S3PutRequest>, String> {
-        if self.buffer.is_empty() { return Ok(Vec::new()); }
+        if self.buffer.is_empty() {
+            return Ok(Vec::new());
+        }
 
         let mut requests = Vec::new();
         for chunk in self.buffer.chunks(self.config.max_batch_size.max(1)) {
@@ -143,9 +157,15 @@ impl S3Sink {
         Ok(requests)
     }
 
-    pub fn buffered_count(&self) -> usize { self.buffer.len() }
-    pub fn total_sent(&self) -> u64 { self.total_sent }
-    pub fn should_flush(&self) -> bool { self.buffer.len() >= self.config.max_batch_size }
+    pub fn buffered_count(&self) -> usize {
+        self.buffer.len()
+    }
+    pub fn total_sent(&self) -> u64 {
+        self.total_sent
+    }
+    pub fn should_flush(&self) -> bool {
+        self.buffer.len() >= self.config.max_batch_size
+    }
 
     fn format_body(&self, records: &[Value]) -> Result<String, String> {
         match self.config.format {
@@ -154,8 +174,10 @@ impl S3Sink {
             OutputFormat::Ndjson => {
                 let mut out = String::new();
                 for r in records {
-                    out.push_str(&serde_json::to_string(r)
-                        .map_err(|e| format!("NDJSON serialization error: {e}"))?);
+                    out.push_str(
+                        &serde_json::to_string(r)
+                            .map_err(|e| format!("NDJSON serialization error: {e}"))?,
+                    );
                     out.push('\n');
                 }
                 Ok(out)
@@ -168,12 +190,17 @@ impl S3Sink {
                     out.push_str(&headers.join(","));
                     out.push('\n');
                     for r in records {
-                        let vals: Vec<String> = headers.iter().map(|h| {
-                            r.get(*h).map(|v| match v {
-                                Value::String(s) => s.clone(),
-                                other => other.to_string(),
-                            }).unwrap_or_default()
-                        }).collect();
+                        let vals: Vec<String> = headers
+                            .iter()
+                            .map(|h| {
+                                r.get(*h)
+                                    .map(|v| match v {
+                                        Value::String(s) => s.clone(),
+                                        other => other.to_string(),
+                                    })
+                                    .unwrap_or_default()
+                            })
+                            .collect();
                         out.push_str(&vals.join(","));
                         out.push('\n');
                     }
@@ -204,7 +231,10 @@ impl S3Sink {
                 for (k, v) in obj {
                     let placeholder = format!("{{{k}}}");
                     if partition.contains(&placeholder) {
-                        let val = match v { Value::String(s) => s.clone(), other => other.to_string() };
+                        let val = match v {
+                            Value::String(s) => s.clone(),
+                            other => other.to_string(),
+                        };
                         partition = partition.replace(&placeholder, &val);
                     }
                 }
@@ -223,7 +253,10 @@ mod tests {
     use super::*;
 
     fn test_config() -> S3SinkConfig {
-        S3SinkConfig { bucket: "my-bucket".to_string(), ..Default::default() }
+        S3SinkConfig {
+            bucket: "my-bucket".to_string(),
+            ..Default::default()
+        }
     }
 
     #[test]
@@ -299,7 +332,11 @@ mod tests {
         let mut config = test_config();
         config.max_batch_size = 2;
         let mut sink = S3Sink::new(config);
-        sink.put(vec![br#"{"a":1}"#.to_vec(), br#"{"b":2}"#.to_vec(), br#"{"c":3}"#.to_vec()]);
+        sink.put(vec![
+            br#"{"a":1}"#.to_vec(),
+            br#"{"b":2}"#.to_vec(),
+            br#"{"c":3}"#.to_vec(),
+        ]);
         let reqs = sink.flush().unwrap();
         assert_eq!(reqs.len(), 2);
         assert_eq!(reqs[0].record_count, 2);

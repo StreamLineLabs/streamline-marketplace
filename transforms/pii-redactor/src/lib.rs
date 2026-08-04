@@ -29,6 +29,30 @@ use serde_json::Value;
 /// Global redactor configuration.
 static mut CONFIG: Option<RedactorConfig> = None;
 
+/// Borrow the module-global configuration.
+///
+/// Accessed through a raw pointer rather than a direct reference to the
+/// `static mut`, which would be undefined behaviour under the Rust 2024
+/// `static_mut_refs` rules.
+///
+/// # Safety
+///
+/// A WASM transform instance is single-threaded and the host runtime always
+/// calls `init` before transform, so no `&mut` alias can exist while the
+/// returned reference is live.
+unsafe fn config() -> Option<&'static RedactorConfig> {
+    (*std::ptr::addr_of!(CONFIG)).as_ref()
+}
+
+/// Replace the module-global configuration.
+///
+/// # Safety
+///
+/// Must not be called while a reference returned by [`config`] is live.
+unsafe fn set_config(config: RedactorConfig) {
+    *std::ptr::addr_of_mut!(CONFIG) = Some(config);
+}
+
 /// Redactor configuration.
 struct RedactorConfig {
     /// Compiled regex patterns for each PII type.
@@ -66,9 +90,7 @@ fn build_patterns(types: &[String]) -> Vec<PiiPattern> {
     if all || types.iter().any(|t| t == "phone") {
         // Matches various phone formats:
         // +1-555-123-4567, (555) 123-4567, 555.123.4567, 5551234567
-        if let Ok(re) = Regex::new(
-            r"(\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}",
-        ) {
+        if let Ok(re) = Regex::new(r"(\+?1[-.\s]?)?\(?[0-9]{3}\)?[-.\s]?[0-9]{3}[-.\s]?[0-9]{4}") {
             patterns.push(PiiPattern {
                 name: "phone".to_string(),
                 regex: re,
@@ -115,7 +137,10 @@ fn build_patterns(types: &[String]) -> Vec<PiiPattern> {
 fn redact_string(input: &str, config: &RedactorConfig) -> String {
     let mut result = input.to_string();
     for pattern in &config.patterns {
-        result = pattern.regex.replace_all(&result, config.replacement.as_str()).to_string();
+        result = pattern
+            .regex
+            .replace_all(&result, config.replacement.as_str())
+            .to_string();
     }
     result
 }
@@ -153,14 +178,19 @@ fn redact_value(value: &mut Value, config: &RedactorConfig) {
 /// Initialize the redactor with configuration JSON.
 ///
 /// Returns 1 on success, 0 on failure.
+///
+/// # Safety
+///
+/// `config_ptr` must either be null or point to `config_len` initialized
+/// bytes that stay valid for the duration of the call.
 #[no_mangle]
-pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
+pub unsafe extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
     const MAX_CONFIG_SIZE: u32 = 1024 * 1024; // 1MB max config
     if config_ptr.is_null() || config_len > MAX_CONFIG_SIZE {
         // On null/oversized config, use defaults
         let patterns = build_patterns(&[]);
         unsafe {
-            CONFIG = Some(RedactorConfig {
+            set_config(RedactorConfig {
                 patterns,
                 replacement: "***REDACTED***".to_string(),
                 fields: Vec::new(),
@@ -176,7 +206,7 @@ pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
             // Default: redact email, phone, SSN from all fields
             let patterns = build_patterns(&[]);
             unsafe {
-                CONFIG = Some(RedactorConfig {
+                set_config(RedactorConfig {
                     patterns,
                     replacement: "***REDACTED***".to_string(),
                     fields: Vec::new(),
@@ -215,7 +245,7 @@ pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
     let patterns = build_patterns(&pattern_types);
 
     unsafe {
-        CONFIG = Some(RedactorConfig {
+        set_config(RedactorConfig {
             patterns,
             replacement,
             fields,
@@ -232,8 +262,18 @@ pub extern "C" fn filter(_input_ptr: *const u8, _input_len: u32) -> u32 {
 }
 
 /// Transform a message by redacting PII from string fields.
+///
+/// # Safety
+///
+/// `input_ptr` must point to `input_len` initialized bytes and `output_ptr`
+/// must point to a writable buffer large enough to hold the result. The
+/// two regions must not overlap.
 #[no_mangle]
-pub extern "C" fn transform(input_ptr: *const u8, input_len: u32, output_ptr: *mut u8) -> u32 {
+pub unsafe extern "C" fn transform(
+    input_ptr: *const u8,
+    input_len: u32,
+    output_ptr: *mut u8,
+) -> u32 {
     const MAX_INPUT_SIZE: u32 = 64 * 1024 * 1024; // 64MB max message
     if input_ptr.is_null() || output_ptr.is_null() || input_len == 0 || input_len > MAX_INPUT_SIZE {
         return 0;
@@ -241,7 +281,7 @@ pub extern "C" fn transform(input_ptr: *const u8, input_len: u32, output_ptr: *m
     let input = unsafe { std::slice::from_raw_parts(input_ptr, input_len as usize) };
 
     let config = unsafe {
-        match CONFIG.as_ref() {
+        match config() {
             Some(c) => c,
             None => {
                 // No config: pass through
@@ -287,6 +327,63 @@ pub extern "C" fn transform(input_ptr: *const u8, input_len: u32, output_ptr: *m
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Serializes tests that touch the module-global config set by `init`,
+    /// which the WASM ABI shares across calls.
+    static ABI_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    fn abi_lock() -> std::sync::MutexGuard<'static, ()> {
+        ABI_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    #[test]
+    fn test_abi_init_then_transform_redacts() {
+        let _guard = abi_lock();
+
+        let cfg = br#"{"patterns":["email"],"replacement":"[X]"}"#;
+        assert_eq!(unsafe { init(cfg.as_ptr(), cfg.len() as u32) }, 1);
+
+        let input = br#"{"contact":"reach me at bob@example.com now"}"#;
+        let mut out = vec![0u8; 512];
+        let written = unsafe { transform(input.as_ptr(), input.len() as u32, out.as_mut_ptr()) };
+        let parsed: Value = serde_json::from_slice(&out[..written as usize]).unwrap();
+        let contact = parsed.get("contact").unwrap().as_str().unwrap();
+        assert!(!contact.contains("bob@example.com"));
+        assert!(contact.contains("[X]"));
+    }
+
+    #[test]
+    fn test_abi_init_uses_defaults_on_null_config() {
+        let _guard = abi_lock();
+
+        // A null config initializes the default pattern set rather than failing.
+        assert_eq!(unsafe { init(std::ptr::null(), 0) }, 1);
+
+        let input = br#"{"email":"a@b.co"}"#;
+        let mut out = vec![0u8; 512];
+        let written = unsafe { transform(input.as_ptr(), input.len() as u32, out.as_mut_ptr()) };
+        let parsed: Value = serde_json::from_slice(&out[..written as usize]).unwrap();
+        assert_eq!(
+            parsed.get("email").unwrap().as_str().unwrap(),
+            "***REDACTED***"
+        );
+    }
+
+    #[test]
+    fn test_abi_transform_rejects_invalid_input() {
+        assert_eq!(
+            unsafe { transform(std::ptr::null(), 4, std::ptr::null_mut()) },
+            0
+        );
+        let input = br#"{"a":1}"#;
+        let mut out = vec![0u8; 16];
+        assert_eq!(unsafe { transform(input.as_ptr(), 0, out.as_mut_ptr()) }, 0);
+    }
+
+    #[test]
+    fn test_abi_filter_accepts_everything() {
+        assert_eq!(filter(std::ptr::null(), 0), 1);
+    }
 
     fn default_config() -> RedactorConfig {
         RedactorConfig {

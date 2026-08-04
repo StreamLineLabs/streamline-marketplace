@@ -26,6 +26,30 @@ use serde_json::Value;
 /// Global router configuration, set once during init.
 static mut CONFIG: Option<RouterConfig> = None;
 
+/// Borrow the module-global configuration.
+///
+/// Accessed through a raw pointer rather than a direct reference to the
+/// `static mut`, which would be undefined behaviour under the Rust 2024
+/// `static_mut_refs` rules.
+///
+/// # Safety
+///
+/// A WASM transform instance is single-threaded and the host runtime always
+/// calls `init` before route/transform, so no `&mut` alias can exist while the
+/// returned reference is live.
+unsafe fn config() -> Option<&'static RouterConfig> {
+    (*std::ptr::addr_of!(CONFIG)).as_ref()
+}
+
+/// Replace the module-global configuration.
+///
+/// # Safety
+///
+/// Must not be called while a reference returned by [`config`] is live.
+unsafe fn set_config(config: RouterConfig) {
+    *std::ptr::addr_of_mut!(CONFIG) = Some(config);
+}
+
 /// Router configuration.
 struct RouterConfig {
     /// Dot-notation field path to evaluate.
@@ -86,8 +110,13 @@ fn find_route(config: &RouterConfig, field_value: Option<&Value>) -> Option<Stri
 /// Initialize the router with configuration JSON.
 ///
 /// Returns 1 on success, 0 on failure.
+///
+/// # Safety
+///
+/// `config_ptr` must either be null or point to `config_len` initialized
+/// bytes that stay valid for the duration of the call.
 #[no_mangle]
-pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
+pub unsafe extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
     let config_bytes = unsafe { std::slice::from_raw_parts(config_ptr, config_len as usize) };
 
     let config: Value = match serde_json::from_slice(config_bytes) {
@@ -120,7 +149,7 @@ pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
         .map(String::from);
 
     unsafe {
-        CONFIG = Some(RouterConfig {
+        set_config(RouterConfig {
             field,
             routes,
             default_topic,
@@ -131,12 +160,17 @@ pub extern "C" fn init(config_ptr: *const u8, config_len: u32) -> u32 {
 }
 
 /// Filter function: drops messages that match no route and have no default_topic.
+///
+/// # Safety
+///
+/// `input_ptr` must either be null or point to `input_len` initialized
+/// bytes that stay valid for the duration of the call.
 #[no_mangle]
-pub extern "C" fn filter(input_ptr: *const u8, input_len: u32) -> u32 {
+pub unsafe extern "C" fn filter(input_ptr: *const u8, input_len: u32) -> u32 {
     let input = unsafe { std::slice::from_raw_parts(input_ptr, input_len as usize) };
 
     let config = unsafe {
-        match CONFIG.as_ref() {
+        match config() {
             Some(c) => c,
             None => return 1,
         }
@@ -150,16 +184,30 @@ pub extern "C" fn filter(input_ptr: *const u8, input_len: u32) -> u32 {
     let field_value = resolve_field(&parsed, &config.field);
     let route = find_route(config, field_value);
 
-    if route.is_some() { 1 } else { 0 }
+    if route.is_some() {
+        1
+    } else {
+        0
+    }
 }
 
 /// Transform function: annotates the message with `_route_topic`.
+///
+/// # Safety
+///
+/// `input_ptr` must point to `input_len` initialized bytes and `output_ptr`
+/// must point to a writable buffer large enough to hold the result. The
+/// two regions must not overlap.
 #[no_mangle]
-pub extern "C" fn transform(input_ptr: *const u8, input_len: u32, output_ptr: *mut u8) -> u32 {
+pub unsafe extern "C" fn transform(
+    input_ptr: *const u8,
+    input_len: u32,
+    output_ptr: *mut u8,
+) -> u32 {
     let input = unsafe { std::slice::from_raw_parts(input_ptr, input_len as usize) };
 
     let config = unsafe {
-        match CONFIG.as_ref() {
+        match config() {
             Some(c) => c,
             None => {
                 std::ptr::copy_nonoverlapping(input.as_ptr(), output_ptr, input.len());
@@ -205,6 +253,71 @@ pub extern "C" fn transform(input_ptr: *const u8, input_len: u32, output_ptr: *m
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Serializes tests that touch the module-global config set by `init`,
+    /// which the WASM ABI shares across calls.
+    static ABI_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
+    fn abi_lock() -> std::sync::MutexGuard<'static, ()> {
+        ABI_LOCK.lock().unwrap_or_else(|e| e.into_inner())
+    }
+
+    #[test]
+    fn test_abi_init_then_route_annotation() {
+        let _guard = abi_lock();
+
+        let cfg = br#"{"field":"type","routes":[{"match":"a","topic":"topic-a"}],"default_topic":"fallback"}"#;
+        assert_eq!(unsafe { init(cfg.as_ptr(), cfg.len() as u32) }, 1);
+
+        let input = br#"{"type":"a"}"#;
+        let mut out = vec![0u8; 256];
+        let written = unsafe { transform(input.as_ptr(), input.len() as u32, out.as_mut_ptr()) };
+        let parsed: Value = serde_json::from_slice(&out[..written as usize]).unwrap();
+        assert_eq!(
+            parsed.get("_route_topic").unwrap().as_str().unwrap(),
+            "topic-a"
+        );
+
+        // Unmatched values fall back to the default topic.
+        let other = br#"{"type":"zzz"}"#;
+        let written = unsafe { transform(other.as_ptr(), other.len() as u32, out.as_mut_ptr()) };
+        let parsed: Value = serde_json::from_slice(&out[..written as usize]).unwrap();
+        assert_eq!(
+            parsed.get("_route_topic").unwrap().as_str().unwrap(),
+            "fallback"
+        );
+    }
+
+    #[test]
+    fn test_abi_filter_drops_unroutable_without_default() {
+        let _guard = abi_lock();
+
+        let cfg = br#"{"field":"type","routes":[{"match":"a","topic":"topic-a"}]}"#;
+        assert_eq!(unsafe { init(cfg.as_ptr(), cfg.len() as u32) }, 1);
+
+        let matched = br#"{"type":"a"}"#;
+        assert_eq!(unsafe { filter(matched.as_ptr(), matched.len() as u32) }, 1);
+
+        let unmatched = br#"{"type":"b"}"#;
+        assert_eq!(
+            unsafe { filter(unmatched.as_ptr(), unmatched.len() as u32) },
+            0
+        );
+
+        let bad = b"not json";
+        assert_eq!(unsafe { filter(bad.as_ptr(), bad.len() as u32) }, 0);
+    }
+
+    #[test]
+    fn test_abi_init_requires_field() {
+        let _guard = abi_lock();
+
+        let bad = b"not json";
+        assert_eq!(unsafe { init(bad.as_ptr(), bad.len() as u32) }, 0);
+
+        let no_field = br#"{"routes":[]}"#;
+        assert_eq!(unsafe { init(no_field.as_ptr(), no_field.len() as u32) }, 0);
+    }
 
     fn test_config() -> RouterConfig {
         RouterConfig {

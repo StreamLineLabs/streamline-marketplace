@@ -36,18 +36,19 @@ pub struct HttpWebhookSinkConfig {
     pub timeout_ms: u64,
 }
 
-fn default_retry_count() -> u32 { 3 }
-fn default_timeout_ms() -> u64 { 30000 }
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
-#[serde(rename_all = "UPPERCASE")]
-pub enum HttpMethod {
-    Post,
-    Put,
+fn default_retry_count() -> u32 {
+    3
+}
+fn default_timeout_ms() -> u64 {
+    30000
 }
 
-impl Default for HttpMethod {
-    fn default() -> Self { HttpMethod::Post }
+#[derive(Default, Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum HttpMethod {
+    #[default]
+    Post,
+    Put,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
@@ -95,17 +96,25 @@ pub struct HttpWebhookSink {
 
 impl HttpWebhookSink {
     pub fn new(config: HttpWebhookSinkConfig) -> Self {
-        Self { config, buffer: Vec::new(), total_sent: 0 }
+        Self {
+            config,
+            buffer: Vec::new(),
+            total_sent: 0,
+        }
     }
 
     pub fn from_config_str(json: &str) -> Result<Self, String> {
-        let config: HttpWebhookSinkConfig = serde_json::from_str(json)
-            .map_err(|e| format!("Invalid config: {e}"))?;
-        if config.url.is_empty() { return Err("url is required".to_string()); }
+        let config: HttpWebhookSinkConfig =
+            serde_json::from_str(json).map_err(|e| format!("Invalid config: {e}"))?;
+        if config.url.is_empty() {
+            return Err("url is required".to_string());
+        }
         Ok(Self::new(config))
     }
 
-    pub fn name(&self) -> &str { "http-webhook-sink" }
+    pub fn name(&self) -> &str {
+        "http-webhook-sink"
+    }
 
     pub fn put(&mut self, records: Vec<Vec<u8>>) {
         for record in records {
@@ -118,7 +127,9 @@ impl HttpWebhookSink {
     }
 
     pub fn flush(&mut self) -> Result<Vec<HttpRequest>, String> {
-        if self.buffer.is_empty() { return Ok(Vec::new()); }
+        if self.buffer.is_empty() {
+            return Ok(Vec::new());
+        }
 
         let mut requests = Vec::new();
         let headers = self.build_headers();
@@ -158,9 +169,15 @@ impl HttpWebhookSink {
         Ok(requests)
     }
 
-    pub fn buffered_count(&self) -> usize { self.buffer.len() }
-    pub fn total_sent(&self) -> u64 { self.total_sent }
-    pub fn should_flush(&self) -> bool { self.config.batch_mode && !self.buffer.is_empty() }
+    pub fn buffered_count(&self) -> usize {
+        self.buffer.len()
+    }
+    pub fn total_sent(&self) -> u64 {
+        self.total_sent
+    }
+    pub fn should_flush(&self) -> bool {
+        self.config.batch_mode && !self.buffer.is_empty()
+    }
 
     fn build_headers(&self) -> HashMap<String, String> {
         let mut headers = HashMap::new();
@@ -229,10 +246,7 @@ mod tests {
     #[test]
     fn test_single_mode() {
         let mut sink = HttpWebhookSink::new(test_config());
-        sink.put(vec![
-            br#"{"a":1}"#.to_vec(),
-            br#"{"b":2}"#.to_vec(),
-        ]);
+        sink.put(vec![br#"{"a":1}"#.to_vec(), br#"{"b":2}"#.to_vec()]);
         let requests = sink.flush().unwrap();
         assert_eq!(requests.len(), 2);
         assert_eq!(requests[0].method, "POST");
@@ -248,10 +262,7 @@ mod tests {
         let mut config = test_config();
         config.batch_mode = true;
         let mut sink = HttpWebhookSink::new(config);
-        sink.put(vec![
-            br#"{"a":1}"#.to_vec(),
-            br#"{"b":2}"#.to_vec(),
-        ]);
+        sink.put(vec![br#"{"a":1}"#.to_vec(), br#"{"b":2}"#.to_vec()]);
         let requests = sink.flush().unwrap();
         assert_eq!(requests.len(), 1);
         assert!(requests[0].body.starts_with('['));
@@ -261,11 +272,16 @@ mod tests {
     #[test]
     fn test_auth_bearer() {
         let mut config = test_config();
-        config.auth = Some(AuthConfig::Bearer { token: "my-token".to_string() });
+        config.auth = Some(AuthConfig::Bearer {
+            token: "my-token".to_string(),
+        });
         let mut sink = HttpWebhookSink::new(config);
         sink.put(vec![br#"{"x":1}"#.to_vec()]);
         let requests = sink.flush().unwrap();
-        assert_eq!(requests[0].headers.get("Authorization").unwrap(), "Bearer my-token");
+        assert_eq!(
+            requests[0].headers.get("Authorization").unwrap(),
+            "Bearer my-token"
+        );
     }
 
     #[test]
@@ -278,7 +294,10 @@ mod tests {
         let mut sink = HttpWebhookSink::new(config);
         sink.put(vec![br#"{"x":1}"#.to_vec()]);
         let requests = sink.flush().unwrap();
-        assert_eq!(requests[0].headers.get("Authorization").unwrap(), "Basic user:pass");
+        assert_eq!(
+            requests[0].headers.get("Authorization").unwrap(),
+            "Basic user:pass"
+        );
     }
 
     #[test]
@@ -347,7 +366,10 @@ mod tests {
         let mut sink = HttpWebhookSink::new(test_config());
         sink.put(vec![br#"{"x":1}"#.to_vec()]);
         let requests = sink.flush().unwrap();
-        assert_eq!(requests[0].headers.get("Content-Type").unwrap(), "application/json");
+        assert_eq!(
+            requests[0].headers.get("Content-Type").unwrap(),
+            "application/json"
+        );
     }
 
     #[test]
@@ -355,6 +377,6 @@ mod tests {
         let mut sink = HttpWebhookSink::new(test_config());
         sink.put(vec![br#"{"x":1}"#.to_vec()]);
         let requests = sink.flush().unwrap();
-        assert!(requests[0].headers.get("Authorization").is_none());
+        assert!(!requests[0].headers.contains_key("Authorization"));
     }
 }
