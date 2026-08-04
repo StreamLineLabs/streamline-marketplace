@@ -1,8 +1,8 @@
-//! WASM security verification, sandboxing policies, and version management.
+//! WASM security verification and sandboxing policies.
 
-// The auditor/version-manager API is exercised by this module's unit tests but
-// is not yet wired into the registry binary's publish path, so its items look
-// unused to the non-test build.
+// The auditor API is exercised by this module's unit tests but is not yet wired
+// into the registry binary's publish path, so its items look unused to the
+// non-test build.
 #![allow(dead_code)]
 
 use serde::{Deserialize, Serialize};

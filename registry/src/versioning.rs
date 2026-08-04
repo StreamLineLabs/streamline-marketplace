@@ -1,4 +1,6 @@
-// The version-manager API is exercised by this module's unit tests but is not
+//! Published transform version lifecycle and ordering.
+
+// The version lifecycle API is exercised by this module's unit tests but is not
 // yet wired into the registry binary's publish path, so its items look unused
 // to the non-test build.
 #![allow(dead_code)]
@@ -84,7 +86,7 @@ impl VersionManager {
     /// `streamline_version`. Both values are expected in `major.minor.patch`
     /// format; we compare component-wise.
     pub fn is_compatible(version: &PublishedVersion, streamline_version: &str) -> bool {
-        parse_semver(&version.min_streamline_version) <= parse_semver(streamline_version)
+        parse(&version.min_streamline_version) <= parse(streamline_version)
     }
 }
 
@@ -95,13 +97,21 @@ impl Default for VersionManager {
 }
 
 /// Parse a `"major.minor.patch"` string into a comparable tuple.
-fn parse_semver(s: &str) -> (u64, u64, u64) {
+pub(crate) fn parse(s: &str) -> (u64, u64, u64) {
     let parts: Vec<u64> = s.split('.').filter_map(|p| p.parse().ok()).collect();
     (
         parts.first().copied().unwrap_or(0),
         parts.get(1).copied().unwrap_or(0),
         parts.get(2).copied().unwrap_or(0),
     )
+}
+
+pub(crate) fn is_greater(a: &str, b: &str) -> bool {
+    parse(a) > parse(b)
+}
+
+pub(crate) fn compare(a: &str, b: &str) -> std::cmp::Ordering {
+    parse(a).cmp(&parse(b))
 }
 
 #[cfg(test)]

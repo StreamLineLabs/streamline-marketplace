@@ -21,6 +21,7 @@ mod store;
 mod versioning;
 
 use store::DataStore;
+use versioning::{compare as compare_versions, is_greater as version_is_greater};
 
 /// Categories recognized by the marketplace.
 #[allow(dead_code)]
@@ -195,7 +196,7 @@ async fn list_transforms(
     for entry in &results {
         let existing = latest.get(&entry.name);
         if match existing {
-            Some(e) => version_gt(&entry.version, &e.version),
+            Some(e) => version_is_greater(&entry.version, &e.version),
             None => true,
         } {
             latest.insert(entry.name.clone(), entry.clone());
@@ -240,7 +241,7 @@ async fn get_transform(
     let versions = store.transforms.get(&name).ok_or(StatusCode::NOT_FOUND)?;
     let latest = versions
         .values()
-        .max_by(|a, b| cmp_version(&a.version, &b.version))
+        .max_by(|a, b| compare_versions(&a.version, &b.version))
         .ok_or(StatusCode::NOT_FOUND)?;
     Ok(Json(latest.clone()))
 }
@@ -487,27 +488,6 @@ struct CategoryInfo {
 }
 
 // ---------------------------------------------------------------------------
-// Helpers
-// ---------------------------------------------------------------------------
-
-fn parse_version(v: &str) -> (u64, u64, u64) {
-    let parts: Vec<u64> = v.split('.').filter_map(|p| p.parse().ok()).collect();
-    (
-        parts.first().copied().unwrap_or(0),
-        parts.get(1).copied().unwrap_or(0),
-        parts.get(2).copied().unwrap_or(0),
-    )
-}
-
-fn version_gt(a: &str, b: &str) -> bool {
-    parse_version(a) > parse_version(b)
-}
-
-fn cmp_version(a: &str, b: &str) -> std::cmp::Ordering {
-    parse_version(a).cmp(&parse_version(b))
-}
-
-// ---------------------------------------------------------------------------
 // Tests
 // ---------------------------------------------------------------------------
 
@@ -517,15 +497,15 @@ mod tests {
 
     #[test]
     fn test_version_gt() {
-        assert!(version_gt("0.2.0", "0.1.0"));
-        assert!(version_gt("1.0.0", "0.9.9"));
-        assert!(!version_gt("0.1.0", "0.1.0"));
+        assert!(version_is_greater("0.2.0", "0.1.0"));
+        assert!(version_is_greater("1.0.0", "0.9.9"));
+        assert!(!version_is_greater("0.1.0", "0.1.0"));
     }
 
     #[test]
     fn test_parse_version() {
-        assert_eq!(parse_version("1.2.3"), (1, 2, 3));
-        assert_eq!(parse_version("0.1.0"), (0, 1, 0));
+        assert_eq!(versioning::parse("1.2.3"), (1, 2, 3));
+        assert_eq!(versioning::parse("0.1.0"), (0, 1, 0));
     }
 
     #[test]
