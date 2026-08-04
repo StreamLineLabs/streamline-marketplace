@@ -18,6 +18,7 @@ use tokio::sync::RwLock;
 mod portal;
 mod security;
 mod store;
+mod versioning;
 
 use store::DataStore;
 
