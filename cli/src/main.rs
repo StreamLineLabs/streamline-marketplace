@@ -19,6 +19,8 @@ use std::fs;
 use std::io::Write;
 use std::path::{Path, PathBuf};
 
+mod checksum;
+
 /// Default registry URL (local server; fall back to GitHub raw if server is not running)
 const DEFAULT_REGISTRY_URL: &str = "http://localhost:8080";
 
@@ -233,16 +235,41 @@ fn load_registry(cli: &Cli) -> Result<Vec<TransformEntry>, String> {
 }
 
 /// Load the list of installed transforms.
-fn load_installed(cli: &Cli) -> Vec<InstalledTransform> {
+///
+/// A missing manifest means "nothing installed"; unreadable or corrupt
+/// manifests are surfaced as errors so callers never silently overwrite
+/// recoverable state.
+fn load_installed(cli: &Cli) -> Result<Vec<InstalledTransform>, String> {
     let manifest_path = transforms_dir(cli).join("installed.json");
     if !manifest_path.exists() {
-        return Vec::new();
+        return Ok(Vec::new());
     }
-    let content = match fs::read_to_string(&manifest_path) {
-        Ok(c) => c,
-        Err(_) => return Vec::new(),
-    };
-    serde_json::from_str(&content).unwrap_or_default()
+    let content = fs::read_to_string(&manifest_path).map_err(|e| {
+        format!(
+            "Failed to read installed manifest {}: {}",
+            manifest_path.display(),
+            e
+        )
+    })?;
+    serde_json::from_str(&content).map_err(|e| {
+        format!(
+            "Installed manifest {} is corrupt: {}. Fix or move the file aside; \
+             refusing to overwrite it.",
+            manifest_path.display(),
+            e
+        )
+    })
+}
+
+/// Load the installed manifest or terminate with a diagnostic.
+fn load_installed_or_exit(cli: &Cli) -> Vec<InstalledTransform> {
+    match load_installed(cli) {
+        Ok(list) => list,
+        Err(e) => {
+            eprintln!("{}: {}", "Error".red().bold(), e);
+            std::process::exit(1);
+        }
+    }
 }
 
 /// Save the list of installed transforms.
@@ -264,6 +291,12 @@ fn sha256_hex(data: &[u8]) -> String {
     let mut hasher = Sha256::new();
     hasher.update(data);
     hex::encode(hasher.finalize())
+}
+
+/// Truncate a digest-like string for display without panicking on short or
+/// multi-byte values.
+fn short_hex(value: &str) -> String {
+    value.chars().take(16).collect()
 }
 
 /// Execute the `search` command.
@@ -352,7 +385,7 @@ fn cmd_install(cli: &Cli, name_with_version: &str, force: bool) {
     };
 
     // Check if already installed
-    let installed = load_installed(cli);
+    let installed = load_installed_or_exit(cli);
     if !force {
         if let Some(existing) = installed.iter().find(|i| i.name == name) {
             if requested_version.is_none() || requested_version == Some(existing.version.as_str()) {
@@ -476,17 +509,22 @@ fn cmd_install(cli: &Cli, name_with_version: &str, force: bool) {
     println!(
         "    Downloaded {} bytes (SHA-256: {})",
         wasm_bytes.len(),
-        &hash[..16]
+        short_hex(&hash)
     );
 
-    // Verify checksum against registry entry
-    if !entry.checksum.is_empty() && entry.checksum != "pending" && hash != entry.checksum {
+    // Verify checksum against the registry entry. This fails closed: an empty,
+    // pending, unsupported, or malformed checksum aborts the installation.
+    if let Err(e) = checksum::verify(&entry.checksum, &wasm_bytes) {
         eprintln!(
-            "{}: Checksum mismatch! Expected {}, got {}. The download may be corrupted or tampered with.",
+            "{}: Refusing to install {} v{}: {}",
             "Error".red().bold(),
-            &entry.checksum[..16],
-            &hash[..16]
+            entry.name,
+            entry.version,
+            e
         );
+        if matches!(e, checksum::ChecksumError::Mismatch { .. }) {
+            eprintln!("       The download may be corrupted or tampered with.");
+        }
         std::process::exit(1);
     }
 
@@ -636,15 +674,27 @@ fn cmd_publish(
 
     // Compute checksum for the WASM binary
     let wasm_checksum = if wasm_path.exists() {
-        let wasm_bytes = fs::read(&wasm_path).unwrap_or_default();
-        let hash = sha256_hex(&wasm_bytes);
-        println!(
-            "    WASM binary: {} ({} bytes, SHA-256: {})",
-            wasm_path.display(),
-            wasm_bytes.len(),
-            &hash[..16]
-        );
-        hash
+        match fs::read(&wasm_path) {
+            Ok(wasm_bytes) => {
+                let digest = checksum::compute(&wasm_bytes);
+                println!(
+                    "    WASM binary: {} ({} bytes, {})",
+                    wasm_path.display(),
+                    wasm_bytes.len(),
+                    short_hex(&digest)
+                );
+                digest
+            }
+            Err(e) => {
+                eprintln!(
+                    "{}: Failed to read WASM binary {}: {}",
+                    "Error".red().bold(),
+                    wasm_path.display(),
+                    e
+                );
+                std::process::exit(1);
+            }
+        }
     } else {
         println!(
             "    {} WASM binary not found at {}",
@@ -652,7 +702,9 @@ fn cmd_publish(
             wasm_path.display()
         );
         println!("    Build with: cargo build --target wasm32-wasip1 --release");
-        String::new()
+        // No artifact yet: record the explicit pending sentinel rather than a
+        // value that could be mistaken for a verified digest.
+        checksum::PENDING.to_string()
     };
 
     let url = wasm_url.clone().unwrap_or_else(|| {
@@ -786,7 +838,7 @@ fn cmd_publish(
 
 /// Execute the `list` command.
 fn cmd_list(cli: &Cli) {
-    let installed = load_installed(cli);
+    let installed = load_installed_or_exit(cli);
 
     if installed.is_empty() {
         println!("{}", "No transforms installed.".yellow());
@@ -811,10 +863,7 @@ fn cmd_list(cli: &Cli) {
         );
         println!("      Path:      {}", transform.wasm_path);
         println!("      Installed: {}", transform.installed_at.dimmed());
-        println!(
-            "      SHA-256:   {}",
-            &transform.sha256[..16].to_string().dimmed()
-        );
+        println!("      SHA-256:   {}", short_hex(&transform.sha256).dimmed());
         println!();
     }
 }
@@ -826,7 +875,7 @@ fn cmd_info(cli: &Cli, name: &str) {
     let entry = registry.iter().find(|e| e.name == name);
 
     // Check installed
-    let installed = load_installed(cli);
+    let installed = load_installed_or_exit(cli);
     let installed_entry = installed.iter().find(|i| i.name == name);
 
     if entry.is_none() && installed_entry.is_none() {
@@ -901,7 +950,7 @@ fn cmd_info(cli: &Cli, name: &str) {
 
 /// Execute the `update` command.
 fn cmd_update(cli: &Cli, name: &str) {
-    let installed = load_installed(cli);
+    let installed = load_installed_or_exit(cli);
 
     if name == "all" {
         if installed.is_empty() {
@@ -996,7 +1045,7 @@ fn cmd_update(cli: &Cli, name: &str) {
 
 /// Execute the `remove` command.
 fn cmd_remove(cli: &Cli, name: &str) {
-    let installed = load_installed(cli);
+    let installed = load_installed_or_exit(cli);
 
     let inst = match installed.iter().find(|i| i.name == name) {
         Some(i) => i.clone(),
@@ -1270,6 +1319,15 @@ mod tests {
                     !entry.checksum.is_empty(),
                     "Entry '{}' must have checksum",
                     entry.name
+                );
+                // Checksums are either a verifiable digest or the explicit
+                // pending sentinel; fabricated placeholders are not allowed.
+                assert!(
+                    checksum::is_pending(&entry.checksum)
+                        || checksum::parse_sha256(&entry.checksum).is_ok(),
+                    "Entry '{}' has an unusable checksum '{}'",
+                    entry.name,
+                    entry.checksum
                 );
             }
 
@@ -1671,7 +1729,7 @@ mod tests {
     #[test]
     fn test_download_url_resolution_http_url() {
         let registry_base = "http://localhost:8080";
-        let wasm_url = "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/json_filter.wasm";
+        let wasm_url = "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/json_filter.wasm";
         let download_url = if wasm_url.starts_with('/') {
             format!("{}{}", registry_base, wasm_url)
         } else if wasm_url.starts_with("http") {
@@ -1682,7 +1740,7 @@ mod tests {
                 registry_base, "json-filter", "0.1.0"
             )
         };
-        assert_eq!(download_url, "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/json_filter.wasm");
+        assert_eq!(download_url, "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/json_filter.wasm");
     }
 
     #[test]
@@ -1744,6 +1802,93 @@ mod tests {
     }
 
     #[test]
+    fn test_corrupt_installed_manifest_is_an_error() {
+        let temp_dir = std::env::temp_dir().join("streamline-marketplace-test-corrupt-manifest");
+        let _ = fs::remove_dir_all(&temp_dir);
+        fs::create_dir_all(&temp_dir).unwrap();
+        fs::write(temp_dir.join("installed.json"), b"{ not json").unwrap();
+
+        let cli = Cli {
+            registry_url: None,
+            transforms_dir: Some(temp_dir.clone()),
+            command: Commands::List,
+        };
+
+        let err = load_installed(&cli).expect_err("corrupt manifest must not load as empty");
+        assert!(err.contains("corrupt"), "unexpected error: {err}");
+        // The corrupt file must be left untouched for recovery.
+        assert_eq!(
+            fs::read_to_string(temp_dir.join("installed.json")).unwrap(),
+            "{ not json"
+        );
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_unreadable_installed_manifest_is_an_error() {
+        let temp_dir = std::env::temp_dir().join("streamline-marketplace-test-unreadable-manifest");
+        let _ = fs::remove_dir_all(&temp_dir);
+        // A directory in place of the manifest file makes reads fail.
+        fs::create_dir_all(temp_dir.join("installed.json")).unwrap();
+
+        let cli = Cli {
+            registry_url: None,
+            transforms_dir: Some(temp_dir.clone()),
+            command: Commands::List,
+        };
+        assert!(load_installed(&cli).is_err());
+
+        let _ = fs::remove_dir_all(&temp_dir);
+    }
+
+    #[test]
+    fn test_missing_manifest_is_empty_not_an_error() {
+        let temp_dir = std::env::temp_dir().join("streamline-marketplace-test-no-manifest");
+        let _ = fs::remove_dir_all(&temp_dir);
+        let cli = Cli {
+            registry_url: None,
+            transforms_dir: Some(temp_dir.clone()),
+            command: Commands::List,
+        };
+        assert!(load_installed(&cli).unwrap().is_empty());
+    }
+
+    #[test]
+    fn test_install_checksum_policy_for_registry_entries() {
+        let bytes = b"fake wasm payload";
+        let good = checksum::compute(bytes);
+
+        // Valid digest for the exact bytes.
+        assert!(checksum::verify(&good, bytes).is_ok());
+
+        // Induced mismatch: one flipped byte.
+        let mut tampered = bytes.to_vec();
+        tampered[0] ^= 0x01;
+        assert!(matches!(
+            checksum::verify(&good, &tampered).unwrap_err(),
+            checksum::ChecksumError::Mismatch { .. }
+        ));
+
+        // Prefix mismatch, pending, empty, and malformed all fail closed.
+        let bare_hex = good.trim_start_matches("sha256:").to_string();
+        assert!(checksum::verify(&bare_hex, bytes).is_err());
+        assert!(checksum::verify(&format!("sha512:{bare_hex}"), bytes).is_err());
+        assert!(checksum::verify("pending", bytes).is_err());
+        assert!(checksum::verify("sha256:pending", bytes).is_err());
+        assert!(checksum::verify("", bytes).is_err());
+        assert!(checksum::verify("sha256:deadbeef", bytes).is_err());
+    }
+
+    #[test]
+    fn test_short_hex_is_boundary_safe() {
+        assert_eq!(short_hex("abcdef"), "abcdef");
+        assert_eq!(short_hex(""), "");
+        assert_eq!(short_hex("ééééééééééééééééé").chars().count(), 16);
+        assert_eq!(short_hex(&"a".repeat(64)).len(), 16);
+    }
+
+    #[test]
     fn test_install_remove_flow() {
         // Integration test: create a temp dir, install, verify, remove
         let temp_dir = std::env::temp_dir().join("streamline-marketplace-test");
@@ -1777,14 +1922,14 @@ mod tests {
             transforms_dir: Some(temp_dir.clone()),
             command: Commands::List,
         };
-        let loaded = load_installed(&cli);
+        let loaded = load_installed(&cli).expect("manifest should load");
         assert_eq!(loaded.len(), 1);
         assert_eq!(loaded[0].name, "test-transform");
 
         // Simulate remove by updating the manifest
         let empty: Vec<InstalledTransform> = Vec::new();
         save_installed(&cli, &empty).unwrap();
-        let loaded_after = load_installed(&cli);
+        let loaded_after = load_installed(&cli).expect("manifest should load");
         assert!(loaded_after.is_empty());
 
         // Cleanup

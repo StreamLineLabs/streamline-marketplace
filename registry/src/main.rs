@@ -10,16 +10,19 @@ use axum::{
     Json, Router,
 };
 use serde::{Deserialize, Serialize};
-use sha2::{Digest, Sha256};
 use std::collections::HashMap;
 use std::sync::Arc;
 use tokio::sync::RwLock;
 
+mod auth;
+mod checksum;
+mod cors;
 mod portal;
 mod security;
 mod store;
 mod versioning;
 
+use auth::AuthConfig;
 use store::DataStore;
 use versioning::{compare as compare_versions, is_greater as version_is_greater};
 
@@ -118,7 +121,12 @@ struct SearchParams {
     sort: Option<String>,
 }
 
-type AppState = Arc<RwLock<DataStore>>;
+/// Shared server state: catalog storage plus the publish token.
+#[derive(Clone)]
+struct AppState {
+    store: Arc<RwLock<DataStore>>,
+    auth: Arc<AuthConfig>,
+}
 
 // ---------------------------------------------------------------------------
 // Main
@@ -133,42 +141,64 @@ async fn main() {
         )
         .init();
 
+    if let Err(e) = run().await {
+        tracing::error!("Marketplace registry failed to start: {e}");
+        eprintln!("Error: {e}");
+        std::process::exit(1);
+    }
+}
+
+/// Start the server, failing closed on any invalid configuration.
+async fn run() -> Result<(), String> {
     let data_dir = std::env::var("REGISTRY_DATA_DIR").unwrap_or_else(|_| {
         // Default: <binary-dir>/data  or  registry/data
         let manifest = std::env::var("CARGO_MANIFEST_DIR").unwrap_or_else(|_| ".".into());
         format!("{}/data", manifest)
     });
 
-    let store = DataStore::load(&data_dir);
-    let state: AppState = Arc::new(RwLock::new(store));
+    // A publish token is mandatory; there is no development fallback.
+    let auth = AuthConfig::from_env().map_err(|e| e.to_string())?;
+    let allowed_origins = cors::origins_from_env().map_err(|e| e.to_string())?;
+    if allowed_origins.is_empty() {
+        tracing::info!(
+            "No {} configured; cross-origin browser requests are denied",
+            cors::ORIGINS_ENV
+        );
+    }
+
+    let store = DataStore::load(&data_dir).map_err(|e| e.to_string())?;
+    let state = AppState {
+        store: Arc::new(RwLock::new(store)),
+        auth: Arc::new(auth),
+    };
 
     let app = Router::new()
         .route("/api/v1/transforms", get(list_transforms))
         .route("/api/v1/transforms", post(publish_transform))
-        .route("/api/v1/transforms/{name}", get(get_transform))
+        .route("/api/v1/transforms/:name", get(get_transform))
         .route(
-            "/api/v1/transforms/{name}/versions",
+            "/api/v1/transforms/:name/versions",
             get(get_transform_versions),
         )
         .route(
-            "/api/v1/transforms/{name}/{version}/download",
+            "/api/v1/transforms/:name/:version/download",
             get(download_transform),
         )
         .route("/api/v1/categories", get(list_categories))
         .route("/healthz", get(healthz))
-        .layer(tower_http::cors::CorsLayer::permissive())
+        .layer(cors::layer(allowed_origins))
         .with_state(state);
 
-    let bind = std::env::var("REGISTRY_BIND").unwrap_or_else(|_| "0.0.0.0:8080".into());
+    // Default to loopback: exposing the registry publicly must be deliberate.
+    let bind = std::env::var("REGISTRY_BIND").unwrap_or_else(|_| "127.0.0.1:8080".into());
     tracing::info!("Marketplace registry listening on {}", bind);
 
     let listener = tokio::net::TcpListener::bind(&bind)
         .await
-        .expect("Failed to bind registry TCP listener — check REGISTRY_BIND address");
-    if let Err(e) = axum::serve(listener, app).await {
-        tracing::error!("Marketplace registry exited with error: {e}");
-        std::process::exit(1);
-    }
+        .map_err(|e| format!("failed to bind REGISTRY_BIND address '{bind}': {e}"))?;
+    axum::serve(listener, app)
+        .await
+        .map_err(|e| format!("server exited with error: {e}"))
 }
 
 // ---------------------------------------------------------------------------
@@ -184,7 +214,7 @@ async fn list_transforms(
     State(state): State<AppState>,
     Query(params): Query<SearchParams>,
 ) -> Json<Vec<TransformEntry>> {
-    let store = state.read().await;
+    let store = state.store.read().await;
     let mut results: Vec<TransformEntry> = store
         .transforms
         .values()
@@ -237,7 +267,7 @@ async fn get_transform(
     State(state): State<AppState>,
     Path(name): Path<String>,
 ) -> Result<Json<TransformEntry>, StatusCode> {
-    let store = state.read().await;
+    let store = state.store.read().await;
     let versions = store.transforms.get(&name).ok_or(StatusCode::NOT_FOUND)?;
     let latest = versions
         .values()
@@ -251,7 +281,7 @@ async fn get_transform_versions(
     State(state): State<AppState>,
     Path(name): Path<String>,
 ) -> Result<Json<Vec<VersionInfo>>, StatusCode> {
-    let store = state.read().await;
+    let store = state.store.read().await;
     let versions = store.transforms.get(&name).ok_or(StatusCode::NOT_FOUND)?;
     let infos: Vec<VersionInfo> = versions
         .values()
@@ -269,24 +299,45 @@ async fn download_transform(
     State(state): State<AppState>,
     Path((name, version)): Path<(String, String)>,
 ) -> Result<impl IntoResponse, StatusCode> {
-    let mut store = state.write().await;
+    let mut store = state.store.write().await;
+
+    // Resolve (and validate) the artifact path before mutating any state.
+    let wasm_path = store.wasm_path(&name, &version).map_err(|e| {
+        tracing::warn!("Rejected download path for {name}/{version}: {e}");
+        StatusCode::BAD_REQUEST
+    })?;
+
     let versions = store
         .transforms
         .get_mut(&name)
         .ok_or(StatusCode::NOT_FOUND)?;
     let entry = versions.get_mut(&version).ok_or(StatusCode::NOT_FOUND)?;
+    let expected_checksum = entry.checksum.clone();
 
-    // Increment download count
-    entry.downloads += 1;
-
-    let wasm_path = store.wasm_path(&name, &version);
     if !wasm_path.exists() {
         return Err(StatusCode::NOT_FOUND);
     }
 
+    // Increment download count
+    entry.downloads += 1;
+
     let bytes = tokio::fs::read(&wasm_path)
         .await
         .map_err(|_| StatusCode::INTERNAL_SERVER_ERROR)?;
+
+    // Serve-time integrity check: never hand out bytes that do not match the
+    // catalog digest, and never treat a pending entry as verified.
+    if let Err(e) = checksum::verify(&expected_checksum, &bytes) {
+        if checksum::is_pending(&expected_checksum) {
+            tracing::error!(
+                "Refusing to serve {name} v{version}: catalog checksum is pending; \
+                 the artifact has no published digest"
+            );
+        } else {
+            tracing::error!("Refusing to serve {name} v{version}: {e}");
+        }
+        return Err(StatusCode::INTERNAL_SERVER_ERROR);
+    }
 
     // Persist updated download count (best-effort)
     let _ = store.save();
@@ -306,24 +357,12 @@ async fn publish_transform(
     headers: HeaderMap,
     mut multipart: Multipart,
 ) -> Result<(StatusCode, Json<TransformEntry>), (StatusCode, String)> {
-    // Simple Bearer token auth
-    let expected_token = match std::env::var("REGISTRY_AUTH_TOKEN") {
-        Ok(token) if !token.is_empty() => token,
-        _ => {
-            eprintln!("WARNING: REGISTRY_AUTH_TOKEN not set — using insecure default. Set this env var in production.");
-            "streamline-dev".into()
-        }
-    };
-    let auth = headers
-        .get("authorization")
-        .and_then(|v| v.to_str().ok())
-        .unwrap_or("");
-    if !auth.starts_with("Bearer ") || auth[7..] != expected_token {
-        return Err((
-            StatusCode::UNAUTHORIZED,
-            "Invalid or missing Authorization header".into(),
-        ));
-    }
+    // Publish requires the configured bearer token; header parsing never
+    // indexes into the raw value, so malformed input cannot panic.
+    state.auth.authorize(&headers).map_err(|e| {
+        tracing::warn!("Rejected publish attempt: {:?}", e);
+        (StatusCode::UNAUTHORIZED, e.to_string())
+    })?;
 
     let mut meta: Option<PublishMeta> = None;
     let mut wasm_bytes: Option<Vec<u8>> = None;
@@ -360,7 +399,7 @@ async fn publish_transform(
     let meta = meta.ok_or((StatusCode::BAD_REQUEST, "Missing 'metadata' field".into()))?;
     let wasm_bytes = wasm_bytes.ok_or((StatusCode::BAD_REQUEST, "Missing 'wasm' field".into()))?;
 
-    // Validate name
+    // Validate name/version: these become filesystem path components.
     if meta.name.is_empty() || meta.version.is_empty() {
         return Err((
             StatusCode::BAD_REQUEST,
@@ -368,12 +407,15 @@ async fn publish_transform(
         ));
     }
 
-    // Compute checksum
-    let mut hasher = Sha256::new();
-    hasher.update(&wasm_bytes);
-    let checksum = format!("sha256:{}", hex::encode(hasher.finalize()));
+    // Compute checksum in the canonical catalog format.
+    let checksum = checksum::compute(&wasm_bytes);
 
-    let mut store = state.write().await;
+    let mut store = state.store.write().await;
+
+    // Reject unsafe names/versions before touching the filesystem.
+    let wasm_path = store
+        .wasm_path(&meta.name, &meta.version)
+        .map_err(|e| (StatusCode::BAD_REQUEST, e.to_string()))?;
 
     // Check for duplicate version
     if let Some(versions) = store.transforms.get(&meta.name) {
@@ -386,7 +428,6 @@ async fn publish_transform(
     }
 
     // Save WASM binary
-    let wasm_path = store.wasm_path(&meta.name, &meta.version);
     if let Some(parent) = wasm_path.parent() {
         tokio::fs::create_dir_all(parent)
             .await
