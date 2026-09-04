@@ -10,42 +10,136 @@ permissions:
   attestations: write
 
 jobs:
-  release:
+  # Pre-artifact gate: cheap, deterministic failures before anything is built.
+  # Deliberately artifact-free — and therefore deliberately *not* a digest
+  # audit. No checksum can be verified before the artifacts exist, and the
+  # catalog legitimately carries `pending` entries for transforms this release
+  # does not ship, so a pre-build "every checksum must be a real digest" check
+  # would reject every release regardless of its contents. The authoritative,
+  # byte-binding gate runs inside the release job below, against the artifacts
+  # that are actually published.
+  validate-catalog:
+    name: Pre-artifact catalog validation
     runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      # Shape and required fields first, so a malformed catalog fails with a
+      # precise diagnostic rather than as a checksum error.
+      - name: Structural validation
+        run: python3 scripts/validate_registry.py --mode structural
+
+      # Hermetic proof that release mode is meaningful, independent of the
+      # live catalog's current state: matching digests pass, pending is accepted
+      # only for artifacts this release does not stage, and pending-on-staged,
+      # wrong, missing, ambiguous, impostor, duplicate, and unreferenced staged
+      # artifacts all fail.
+      - name: Release validation controls (fixtures)
+        run: bash scripts/validate_registry_controls.sh
+
+  release:
+    needs: [validate-catalog]
+    runs-on: ubuntu-22.04
+    container:
+      image: rust:1.85.1-bookworm@sha256:e51d0265072d2d9d5d320f6a44dde6b9ef13653b035098febd68cce8fa7c0bc4
+    timeout-minutes: 60
     outputs:
       hashes: ${{ steps.hash.outputs.hashes }}
     steps:
       - uses: actions/checkout@v4
 
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          targets: wasm32-wasip1
+      # First gate, before target installation or any compilation. The tag must
+      # equal both [workspace.package].version and the CLI package version as
+      # reported by the locked Cargo metadata graph.
+      - name: Verify release tag matches workspace and CLI versions
+        run: python3 scripts/check_release_version.py --tag "${GITHUB_REF_NAME}"
 
-      - uses: Swatinem/rust-cache@v2
+      - name: Require an explicit future shipping plan
+        run: |
+          python3 scripts/check_shipping_plan.py \
+            --tag "${GITHUB_REF_NAME}" \
+            --selection registry/shipping.json
+
+      - name: Install pinned WASM target
+        run: rustup target add wasm32-wasip1
 
       - name: Build all transforms
-        run: |
-          for dir in transforms/*/; do
-            echo "Building $dir..."
-            cargo build --release --manifest-path "${dir}Cargo.toml" --target wasm32-wasip1
-          done
+        run: bash scripts/build_release_wasm.sh
 
       - name: Build registry CLI
-        run: cargo build --release -p streamline-marketplace-cli
+        run: make build-cli
 
       - name: Stage release artifacts
         id: stage
         run: |
+          set -euo pipefail
+          rm -rf dist
           mkdir -p dist
-          cp target/wasm32-wasip1/release/*.wasm dist/ 2>/dev/null || true
-          cp target/release/streamline-marketplace-cli dist/ 2>/dev/null || true
+          python3 scripts/stage_release_artifacts.py \
+            --tag "${GITHUB_REF_NAME}" \
+            --selection registry/shipping.json \
+            --build-dir target/wasm32-wasip1/release \
+            --output-dir dist
+          cp target/release/streamline-marketplace dist/
+          test -s dist/streamline-marketplace || { echo "missing dist/streamline-marketplace"; exit 1; }
           ls -la dist/
+
+      # ---- Authoritative release gate -----------------------------------
+      # Must run here, in this job, after staging and before any signing,
+      # attestation, or upload: it is the only point where the catalog can be
+      # bound to the exact bytes that will be published. The tag-triggered run
+      # in ci.yml is a separate, parallel workflow and cannot stop these steps.
+      - name: Structural validation
+        run: python3 scripts/validate_registry.py --mode structural
+
+      # Every selected name/version must resolve to one live catalog entry whose
+      # wasm_url uses this exact tag and selected basename, and whose digest
+      # matches the staged bytes. Every staged WASM must be selected. Older-tag
+      # entries remain in the live catalog but cannot be republished here.
+      # Selected pending entries, wrong tags/versions/basenames, missing or
+      # unselected modules, and syntactically valid wrong digests all fail.
+      - name: Release validation against staged artifacts (blocking)
+        run: |
+          python3 scripts/validate_registry.py \
+            --mode release \
+            --artifacts dist \
+            --expected-tag "${GITHUB_REF_NAME}" \
+            --selection registry/shipping.json
+
+      # Hermetic controls, so a validator that silently stopped checking cannot
+      # wave a release through. The generic built-output controls use all six
+      # modules in a separate scratch directory; only the explicit current-tag
+      # selection above is copied to dist and published.
+      - name: Release validation controls (fixtures + built artifacts)
+        run: |
+          rm -rf target/release-validation-controls
+          mkdir -p target/release-validation-controls
+          cp target/wasm32-wasip1/release/*.wasm target/release-validation-controls/
+          bash scripts/validate_registry_controls.sh \
+            --built-artifacts target/release-validation-controls
+
+      # Freeze the verified bytes. Signing, attestation, and upload below must
+      # consume these exact files; the guard step re-checks this manifest so no
+      # rebuild or mutation can slip in between validation and publication.
+      - name: Record verified artifact digests
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          sha256sum -- * > "${RUNNER_TEMP}/verified-artifacts.sha256"
+          cat "${RUNNER_TEMP}/verified-artifacts.sha256"
 
       # ---- Supply-chain hardening ---------------------------------------
       - name: Install cosign
         uses: sigstore/cosign-installer@v3
         with:
           cosign-release: 'v2.4.1'
+
+      - name: Verify staged artifacts are unchanged since validation
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          sha256sum -c --strict "${RUNNER_TEMP}/verified-artifacts.sha256"
 
       - name: Sign each artifact (keyless)
         env:
@@ -65,21 +159,40 @@ jobs:
         working-directory: dist
         run: |
           set -euo pipefail
-          sha256sum * > SHA256SUMS
-          # base64-encoded subject list for SLSA generator
-          echo "hashes=$(sha256sum * | base64 -w0)" >> "$GITHUB_OUTPUT"
+          # `--` keeps artifact names that begin with '-' from being parsed as
+          # options. The manifest is written to a temporary name first so that
+          # it is not hashed into itself, then reused verbatim as the SLSA
+          # subject list, keeping the manifest and the provenance subjects
+          # identical.
+          sha256sum -- * > SHA256SUMS.tmp
+          mv SHA256SUMS.tmp SHA256SUMS
+          cat SHA256SUMS
+          echo "hashes=$(base64 -w0 < SHA256SUMS)" >> "$GITHUB_OUTPUT"
 
       - name: Attest build provenance for artifacts
         uses: actions/attest-build-provenance@v1
         with:
           subject-path: 'dist/*'
 
+      # Last gate before the assets leave the runner: the published bytes are
+      # still the validated bytes, and the SHA256SUMS manifest agrees with the
+      # digests recorded at validation time.
+      - name: Verify published artifacts match the validated bytes
+        working-directory: dist
+        run: |
+          set -euo pipefail
+          sha256sum -c --strict "${RUNNER_TEMP}/verified-artifacts.sha256"
+          while read -r digest name; do
+            grep -Fqx "${digest}  ${name}" SHA256SUMS \
+              || { echo "SHA256SUMS disagrees with the validated digest for ${name}"; exit 1; }
+          done < "${RUNNER_TEMP}/verified-artifacts.sha256"
+
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
           files: |
             dist/*.wasm
-            dist/streamline-marketplace-cli
+            dist/streamline-marketplace
             dist/*.sig
             dist/*.pem
             dist/SHA256SUMS
@@ -95,4 +208,3 @@ jobs:
     with:
       base64-subjects: ${{ needs.release.outputs.hashes }}
       upload-assets: true
-

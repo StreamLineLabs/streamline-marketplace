@@ -1,0 +1,12 @@
+[
+  {
+    "name": "fixture-wrong-digest",
+    "version": "0.1.0",
+    "description": "Negative control: a syntactically valid digest that belongs to a different artifact (fixture_unrelated.wasm) while the entry maps to fixture_released.wasm. Structural and digests modes accept it; artifact-bound release validation must reject it.",
+    "author": "streamline-ci",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.0.0-ci-fixture/fixture_released.wasm",
+    "categories": ["filtering"],
+    "min_streamline_version": "0.1.0",
+    "checksum": "sha256:3bc8bf39cb6c4649140d9ea0c2e0ec674284177c7b90e299d699e48ce4de2b47"
+  }
+]

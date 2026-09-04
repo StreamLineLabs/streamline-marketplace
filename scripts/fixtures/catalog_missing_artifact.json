@@ -1,0 +1,22 @@
+[
+  {
+    "name": "fixture-released",
+    "version": "0.1.0",
+    "description": "Baseline: the shipped entry of this fixture release, so the staged artifact is bound by the catalog and the run fails only for the defect below.",
+    "author": "streamline-ci",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.0.0-ci-fixture/fixture_released.wasm",
+    "categories": ["filtering"],
+    "min_streamline_version": "0.1.0",
+    "checksum": "sha256:a68332929568049a4fcfcfb52adc88c5a771dac1379589f8b33ecd93836796fb"
+  },
+  {
+    "name": "fixture-missing-artifact",
+    "version": "0.1.0",
+    "description": "Negative control: a canonical digest claiming a release asset that was never built. Structural and digests modes accept it; artifact-bound release validation must reject it as unmapped.",
+    "author": "streamline-ci",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.0.0-ci-fixture/fixture_absent.wasm",
+    "categories": ["filtering"],
+    "min_streamline_version": "0.1.0",
+    "checksum": "sha256:a68332929568049a4fcfcfb52adc88c5a771dac1379589f8b33ecd93836796fb"
+  }
+]

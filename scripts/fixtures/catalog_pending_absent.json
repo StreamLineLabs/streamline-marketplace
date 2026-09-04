@@ -1,0 +1,22 @@
+[
+  {
+    "name": "fixture-released",
+    "version": "0.1.0",
+    "description": "Baseline: the shipped entry of this fixture release. Its digest is the real sha256 of scripts/fixtures/artifacts/fixture_released.wasm.",
+    "author": "streamline-ci",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.0.0-ci-fixture/fixture_released.wasm",
+    "categories": ["filtering"],
+    "min_streamline_version": "0.1.0",
+    "checksum": "sha256:a68332929568049a4fcfcfb52adc88c5a771dac1379589f8b33ecd93836796fb"
+  },
+  {
+    "name": "fixture-pending-absent",
+    "version": "0.1.0",
+    "description": "Positive control: an unimplemented transform whose artifact is not staged in this release. 'pending' is the honest value here, so artifact-bound release validation must accept it.",
+    "author": "streamline-ci",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.0.0-ci-fixture/fixture_absent.wasm",
+    "categories": ["filtering"],
+    "min_streamline_version": "0.1.0",
+    "checksum": "pending"
+  }
+]

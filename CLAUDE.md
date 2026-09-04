@@ -20,7 +20,9 @@ make check                   # Formatting + linting
 │   └── src/                 # Install, search, publish commands
 ├── registry/
 │   ├── src/                 # Registry server
-│   └── transforms.json      # Transform catalog
+│   ├── transforms.json      # Transform catalog
+│   ├── published-releases.json # Immutable manifests for real GitHub assets
+│   └── shipping.json        # Future tag shipping plan (empty = fail closed)
 ├── transforms/
 │   ├── json-filter/         # Filter messages by JSON field values
 │   ├── timestamp-enricher/  # Add processing timestamps to messages
@@ -44,6 +46,20 @@ cargo build -p json-filter --target wasm32-wasip1 --release
 # Test a transform (native)
 cargo test -p json-filter
 ```
+
+Canonical future release builds use exactly Rust 1.85.1 on
+`x86_64-unknown-linux-gnu`, the pinned amd64 Linux container documented in the
+README, and `Cargo.lock`:
+```bash
+make build-transforms-release
+make check-reproducible-wasm
+make verify-published-registry
+```
+
+Never stage `target/wasm32-wasip1/release/*.wasm` wholesale for a tag.
+`registry/published-releases.json` describes only assets that actually exist;
+`registry/shipping.json` is separate and must contain a new, version-matched tag
+before current source can be built or staged by the release workflow.
 
 ## Registry Schema
 ```json

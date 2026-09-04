@@ -8,16 +8,142 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  ci:
+  check:
+    name: Format, lint, test
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
 
       - uses: dtolnay/rust-toolchain@stable
         with:
-          toolchain: "1.85"
+          toolchain: "1.85.1"
           components: rustfmt, clippy
+
+      - uses: Swatinem/rust-cache@v2
 
       - run: cargo fmt --all -- --check
       - run: cargo clippy --all-targets -- -D warnings
       - run: cargo test
+
+  wasm-build:
+    name: Reproducible current-source WASM
+    runs-on: ubuntu-22.04
+    container:
+      image: rust:1.85.1-bookworm@sha256:e51d0265072d2d9d5d320f6a44dde6b9ef13653b035098febd68cce8fa7c0bc4
+    env:
+      CARGO_TARGET_DIR: target/reproducible-release
+      SOURCE_DATE_EPOCH: "0"
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install pinned target and clippy component
+        run: rustup target add wasm32-wasip1 && rustup component add clippy
+
+      # This job deliberately does not restore a target cache. Two builds use
+      # the same dedicated target path sequentially, deleting only that path
+      # between them, and must produce byte-identical modules.
+      - name: Prove clean Rust 1.85.1 builds are reproducible
+        run: bash scripts/check_reproducible_wasm.sh
+
+      - name: Lint WASM transforms
+        run: |
+          set -euo pipefail
+          for crate in json-filter timestamp-enricher pii-redactor schema-validator field-router ai-classifier; do
+            cargo clippy -p "$crate" --target wasm32-wasip1 -- -D warnings
+          done
+
+      - name: Verify each transform produced a module
+        run: |
+          set -euo pipefail
+          for module in json_filter timestamp_enricher pii_redactor schema_validator field_router ai_classifier; do
+            test -s "${CARGO_TARGET_DIR}/wasm32-wasip1/release/${module}.wasm" \
+              || { echo "missing ${module}.wasm"; exit 1; }
+          done
+          ls -la "${CARGO_TARGET_DIR}"/wasm32-wasip1/release/*.wasm
+
+      - name: Stage all built modules for generic negative controls
+        run: |
+          set -euo pipefail
+          rm -rf dist/all-built
+          mkdir -p dist/all-built
+          cp "${CARGO_TARGET_DIR}"/wasm32-wasip1/release/*.wasm dist/all-built/
+
+      - name: Artifact-bound validation controls over built modules
+        run: bash scripts/validate_registry_controls.sh --built-artifacts dist/all-built
+
+  registry-validation:
+    name: Registry catalog validation
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Pre-artifact mode: deterministic, never depends on published releases.
+      # Passes both before and after real digests land in the catalog.
+      - name: Structural validation
+        run: python3 scripts/validate_registry.py --mode structural
+
+      # Hermetic controls, independent of the live catalog's current state:
+      # release mode accepts a digest that matches its artifact's bytes and a
+      # `pending` entry for a transform the release does not stage, and rejects
+      # pending-on-staged, wrong, missing, ambiguous, impostor, duplicate, and
+      # unreferenced staged artifacts.
+      #
+      # There is deliberately no artifact-free "every checksum is a real digest"
+      # step here. This workflow runs in parallel with release.yml and cannot
+      # block a tag publish, and such a check would fail purely because the
+      # catalog lists transforms that are not built yet — noise that says
+      # nothing about the bytes of a release. The authoritative gate is the
+      # artifact-bound release validation inside the release job of
+      # .github/workflows/release.yml, run against the staged artifacts that are
+      # actually published.
+      - name: Release validation controls (fixtures)
+        run: bash scripts/validate_registry_controls.sh
+
+      # Published metadata is verified against downloaded GitHub release bytes,
+      # never against a rebuild of the current branch. v0.1.0/v0.2.0 have no
+      # transform assets and therefore have no published manifest entries.
+      - name: Verify live catalog against actual published release assets
+        run: |
+          python3 scripts/verify_published_registry.py \
+            --download \
+            --catalog registry/transforms.json \
+            --manifest registry/published-releases.json
+
+  supply-chain:
+    name: cargo-deny
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      # Blocking: license policy, banned crates, and source registries.
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check bans licenses sources
+
+      # Blocking: the dependency graph is clean of known advisories.
+      # rustls-webpki was updated to 0.103.15 (clears RUSTSEC-2026-0099/-0104
+      # and the two name-constraint/CRL advisories), spin to 0.9.9 (un-yanked),
+      # and the unused `indicatif` dependency was dropped from the CLI, which
+      # removed the unmaintained `number_prefix` crate from the graph.
+      - uses: EmbarkStudios/cargo-deny-action@v2
+        with:
+          command: check advisories
+
+  e2e:
+    name: End-to-end publish/install integrity
+    runs-on: ubuntu-latest
+    # The script bounds its own negative startup controls; this is the outer
+    # backstop so a wedged server or download can never occupy a runner for the
+    # default 6-hour job limit.
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.85.1"
+
+      - uses: Swatinem/rust-cache@v2
+
+      # Hermetic: loopback registry, locally built artifact, no release downloads.
+      - run: bash scripts/e2e_publish_install.sh
