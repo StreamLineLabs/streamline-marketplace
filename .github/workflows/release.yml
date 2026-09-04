@@ -55,6 +55,10 @@ jobs:
       - name: Verify release tag matches workspace and CLI versions
         run: python3 scripts/check_release_version.py --tag "${GITHUB_REF_NAME}"
 
+      # Current v0.4.0 source is newer than the immutable v0.3.0 transform
+      # artifacts. The explicit v0.4.0 shipping plan is CLI-only and selects no
+      # WASM bytes, so this workflow cannot rebuild or reattach historical
+      # transforms under the new tag.
       - name: Require an explicit future shipping plan
         run: |
           python3 scripts/check_shipping_plan.py \
@@ -70,6 +74,11 @@ jobs:
       - name: Build registry CLI
         run: make build-cli
 
+      # Stage only the name/version/asset records explicitly selected for this
+      # tag in registry/shipping.json. An empty selection is allowed only when
+      # the tag is explicitly present (the v0.4.0 CLI-only
+      # release); an unknown tag fails rather than republishing older modules.
+      # The native CLI is staged separately because it is not catalog-managed.
       - name: Stage release artifacts
         id: stage
         run: |

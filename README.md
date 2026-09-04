@@ -222,6 +222,20 @@ The live catalog currently points all six released modules at the real v0.3.0
 assets. GitHub has no transform assets for v0.1.0 or v0.2.0, so no manifest or
 catalog URL claims otherwise.
 
+`registry/shipping.json` is deliberately separate from published history. It
+now contains an explicit `v0.4.0` CLI-only plan with an empty transform
+selection: the native CLI may be staged, but no current WASM bytes are claimed,
+rebuilt, or attached to the tag. Current branch builds must never be assigned
+to v0.3.0 or any earlier tag. The release workflow therefore fails before
+compilation unless:
+
+1. the pushed tag equals both the workspace and CLI versions, as reported by
+   `cargo metadata --locked --no-deps`, and
+2. that new tag has an explicit future shipping plan.
+
+A coordinated version bump and shipping-plan update are required before current
+source can be released.
+
 ```bash
 make validate-registry            # structural / pre-artifact validation
 make validate-registry-digests    # advisory audit: which entries are still 'pending'?
