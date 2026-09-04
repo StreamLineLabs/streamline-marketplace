@@ -73,10 +73,7 @@ fn resolve_field<'a>(value: &'a Value, path: &str) -> Option<&'a Value> {
     let parts: Vec<&str> = path.split('.').collect();
     let mut current = value;
     for part in parts {
-        match current.get(part) {
-            Some(v) => current = v,
-            None => return None,
-        }
+        current = current.get(part)?;
     }
     Some(current)
 }
