@@ -9,6 +9,20 @@
 
 A registry and discovery system for user-contributed WebAssembly (WASM) transforms for [Streamline](https://github.com/streamlinelabs/streamline) -- "The Redis of Streaming".
 
+## Security scanning
+
+CodeQL is an explicit opt-in because its result upload requires repository code
+scanning to be enabled. Maintainers must first enable code scanning / GitHub
+Advanced Security as applicable, then create the repository Actions variable
+`CODEQL_ENABLED=true`. Until both are configured, the CodeQL job is neutrally
+skipped rather than reporting a misleading failure.
+
+When enabled, CodeQL v4 analyzes the Rust source and GitHub Actions workflows;
+it does not claim C/C++ coverage. The unconditional CI Clippy/tests and
+`cargo-deny` advisory, license, ban, and source checks remain the mandatory
+release security baseline while CodeQL is disabled. Run
+`make check-workflows` to verify this workflow contract locally.
+
 ## Overview
 
 The WASM Transform Marketplace enables the Streamline community to share, discover, and install reusable stream processing transforms. Each transform is a compiled WebAssembly module that runs inside the Streamline server's sandboxed `wasmtime` runtime, providing safe and performant message processing without external dependencies.

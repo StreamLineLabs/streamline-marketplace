@@ -80,6 +80,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Check workflow security hygiene
+        run: python3 scripts/check_workflow_hygiene.py
+
       # Pre-artifact mode: deterministic, never depends on published releases.
       # Passes both before and after real digests land in the catalog.
       - name: Structural validation

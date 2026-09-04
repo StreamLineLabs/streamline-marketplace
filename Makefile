@@ -1,7 +1,7 @@
 .PHONY: build test lint fmt check clean help build-transforms build-transforms-release \
 	check-reproducible-wasm build-sinks build-cli stage-release verify-published-registry \
 	validate-registry validate-registry-digests validate-registry-release \
-	validate-registry-controls
+	validate-registry-controls check-workflows
 
 WASM_TARGET = wasm32-wasip1
 
@@ -60,7 +60,7 @@ test: ## Run all tests
 fmt: ## Format all code
 	cargo fmt --all
 
-check: ## Check formatting and lints
+check: check-workflows ## Check workflow hygiene, formatting, and lints
 	cargo fmt --all -- --check
 	cargo clippy -p streamline-marketplace-cli --all-targets -- -D warnings
 	@for t in $(WASM_TRANSFORMS); do \
@@ -71,6 +71,9 @@ check: ## Check formatting and lints
 	done
 
 lint: check ## Alias for check
+
+check-workflows: ## Check security workflow invariants
+	python3 scripts/check_workflow_hygiene.py
 
 validate-registry: ## Validate the transform registry (structural / pre-artifact)
 	python3 scripts/validate_registry.py --mode structural
