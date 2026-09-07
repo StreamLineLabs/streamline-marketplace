@@ -1,0 +1,12 @@
+[
+  {
+    "name": "fixture-pending-staged",
+    "version": "0.1.0",
+    "description": "Negative control: a 'pending' entry for an artifact that IS staged in this release. Release validation must reject it for being pending on a shipped asset, not for a missing artifact.",
+    "author": "streamline-ci",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.0.0-ci-fixture/fixture_pending.wasm",
+    "categories": ["filtering"],
+    "min_streamline_version": "0.1.0",
+    "checksum": "pending"
+  }
+]

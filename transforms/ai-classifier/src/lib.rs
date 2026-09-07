@@ -28,14 +28,25 @@ struct Config {
     field: String,
     #[serde(default = "default_output_field")]
     output_field: String,
+    // Accepted for schema compatibility: the host runtime resolves the API key
+    // from this environment variable name, the sandboxed module never reads it.
+    #[allow(dead_code)]
     #[serde(default = "default_api_key_env")]
     api_key_env: String,
 }
 
-fn default_model() -> String { "gpt-4o-mini".to_string() }
-fn default_field() -> String { "value".to_string() }
-fn default_output_field() -> String { "_classification".to_string() }
-fn default_api_key_env() -> String { "OPENAI_API_KEY".to_string() }
+fn default_model() -> String {
+    "gpt-4o-mini".to_string()
+}
+fn default_field() -> String {
+    "value".to_string()
+}
+fn default_output_field() -> String {
+    "_classification".to_string()
+}
+fn default_api_key_env() -> String {
+    "OPENAI_API_KEY".to_string()
+}
 
 #[derive(Serialize)]
 struct Classification {
@@ -49,8 +60,19 @@ struct Classification {
 /// Called by the Streamline WASM runtime for each message.
 /// Input: JSON message bytes + config JSON bytes
 /// Output: transformed JSON message bytes (with classification added)
+///
+/// # Safety
+///
+/// `input_ptr` must point to `input_len` initialized bytes and `output_ptr`
+/// must point to a writable buffer large enough to hold the result. The
+/// two regions must not overlap.
 #[no_mangle]
-pub extern "C" fn transform(input_ptr: *const u8, input_len: u32, config_ptr: *const u8, config_len: u32) -> u64 {
+pub unsafe extern "C" fn transform(
+    input_ptr: *const u8,
+    input_len: u32,
+    config_ptr: *const u8,
+    config_len: u32,
+) -> u64 {
     // SAFETY: pointers and lengths are provided by the WASM host runtime
     let input = unsafe { std::slice::from_raw_parts(input_ptr, input_len as usize) };
     let config_bytes = unsafe { std::slice::from_raw_parts(config_ptr, config_len as usize) };
@@ -69,8 +91,13 @@ pub extern "C" fn transform(input_ptr: *const u8, input_len: u32, config_ptr: *c
 }
 
 /// Free memory allocated by transform(). Called by the WASM host runtime.
+///
+/// # Safety
+///
+/// `ptr`/`len` must be a pair previously returned by [`transform`] and not
+/// yet freed; the memory must have been allocated by this module.
 #[no_mangle]
-pub extern "C" fn dealloc(ptr: *mut u8, len: u32) {
+pub unsafe extern "C" fn dealloc(ptr: *mut u8, len: u32) {
     // SAFETY: ptr and len were returned by transform() from a Vec allocation
     unsafe {
         let _ = Vec::from_raw_parts(ptr, len as usize, len as usize);
@@ -78,15 +105,16 @@ pub extern "C" fn dealloc(ptr: *mut u8, len: u32) {
 }
 
 fn process(input: &[u8], config_bytes: &[u8]) -> Result<Vec<u8>, String> {
-    let config: Config = serde_json::from_slice(config_bytes)
-        .map_err(|e| format!("Invalid config: {}", e))?;
+    let config: Config =
+        serde_json::from_slice(config_bytes).map_err(|e| format!("Invalid config: {}", e))?;
 
-    let mut message: serde_json::Value = serde_json::from_slice(input)
-        .map_err(|e| format!("Invalid JSON input: {}", e))?;
+    let mut message: serde_json::Value =
+        serde_json::from_slice(input).map_err(|e| format!("Invalid JSON input: {}", e))?;
 
     let text = match &config.field as &str {
         "value" => serde_json::to_string(&message).unwrap_or_default(),
-        field => message.get(field)
+        field => message
+            .get(field)
             .and_then(|v| v.as_str())
             .unwrap_or("")
             .to_string(),
@@ -124,7 +152,8 @@ fn classify_local(text: &str, categories: &[String]) -> (String, f64) {
     }
 
     // Default to first category with low confidence
-    let default = categories.first()
+    let default = categories
+        .first()
         .cloned()
         .unwrap_or_else(|| "unknown".to_string());
     (default, 0.1)
@@ -133,6 +162,62 @@ fn classify_local(text: &str, categories: &[String]) -> (String, f64) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn test_config_accepts_api_key_env() {
+        // `api_key_env` is resolved by the host runtime, but it must stay part
+        // of the accepted configuration schema.
+        let config: Config = serde_json::from_str(
+            r#"{"provider":"openai","categories":["a"],"api_key_env":"MY_KEY"}"#,
+        )
+        .unwrap();
+        assert_eq!(config.api_key_env, "MY_KEY");
+        assert_eq!(config.model, "gpt-4o-mini");
+        assert_eq!(config.output_field, "_classification");
+    }
+
+    #[test]
+    fn test_config_defaults_api_key_env() {
+        let config: Config =
+            serde_json::from_str(r#"{"provider":"openai","categories":["a"]}"#).unwrap();
+        assert_eq!(config.api_key_env, "OPENAI_API_KEY");
+    }
+
+    #[test]
+    fn test_abi_transform_returns_zero_on_invalid_input() {
+        let input = b"not json";
+        let cfg = br#"{"provider":"openai","categories":["urgent"]}"#;
+        let packed = unsafe {
+            transform(
+                input.as_ptr(),
+                input.len() as u32,
+                cfg.as_ptr(),
+                cfg.len() as u32,
+            )
+        };
+        assert_eq!(packed, 0);
+    }
+
+    #[test]
+    fn test_abi_transform_packs_output_length() {
+        let input = br#"{"message":"urgent outage"}"#;
+        let cfg = br#"{"provider":"openai","categories":["urgent"],"field":"message"}"#;
+        let expected = process(input, cfg).unwrap();
+
+        // The ABI packs `(ptr << 32) | len`; only the length is recoverable on
+        // 64-bit hosts, where the pointer does not fit in the upper 32 bits.
+        // The host runtime calls `dealloc` to release the leaked allocation.
+        let packed = unsafe {
+            transform(
+                input.as_ptr(),
+                input.len() as u32,
+                cfg.as_ptr(),
+                cfg.len() as u32,
+            )
+        };
+        assert_ne!(packed, 0);
+        assert_eq!((packed & 0xFFFF_FFFF) as usize, expected.len());
+    }
 
     #[test]
     fn test_classify_local_match() {
@@ -158,7 +243,10 @@ mod tests {
         let parsed: serde_json::Value = serde_json::from_slice(&result).unwrap();
         assert!(parsed.get("_classification").is_some());
         let classification = parsed.get("_classification").unwrap();
-        assert_eq!(classification.get("label").unwrap().as_str().unwrap(), "urgent");
+        assert_eq!(
+            classification.get("label").unwrap().as_str().unwrap(),
+            "urgent"
+        );
     }
 
     #[test]

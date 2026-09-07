@@ -29,18 +29,19 @@ pub struct MongoDbSinkConfig {
     pub batch_size: usize,
 }
 
-fn default_uri() -> String { "mongodb://localhost:27017".to_string() }
-fn default_batch_size() -> usize { 1000 }
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum WriteMode {
-    Insert,
-    Upsert,
+fn default_uri() -> String {
+    "mongodb://localhost:27017".to_string()
+}
+fn default_batch_size() -> usize {
+    1000
 }
 
-impl Default for WriteMode {
-    fn default() -> Self { WriteMode::Insert }
+#[derive(Default, Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum WriteMode {
+    #[default]
+    Insert,
+    Upsert,
 }
 
 impl Default for MongoDbSinkConfig {
@@ -87,34 +88,48 @@ pub struct MongoDbSink {
 
 impl MongoDbSink {
     pub fn new(config: MongoDbSinkConfig) -> Self {
-        Self { config, buffer: Vec::new(), total_sent: 0 }
+        Self {
+            config,
+            buffer: Vec::new(),
+            total_sent: 0,
+        }
     }
 
     pub fn from_config_str(json: &str) -> Result<Self, String> {
-        let config: MongoDbSinkConfig = serde_json::from_str(json)
-            .map_err(|e| format!("Invalid config: {e}"))?;
-        if config.database.is_empty() { return Err("database is required".to_string()); }
-        if config.collection.is_empty() { return Err("collection is required".to_string()); }
+        let config: MongoDbSinkConfig =
+            serde_json::from_str(json).map_err(|e| format!("Invalid config: {e}"))?;
+        if config.database.is_empty() {
+            return Err("database is required".to_string());
+        }
+        if config.collection.is_empty() {
+            return Err("collection is required".to_string());
+        }
         if config.write_mode == WriteMode::Upsert && config.upsert_key_field.is_none() {
             return Err("upsert_key_field is required for upsert mode".to_string());
         }
         Ok(Self::new(config))
     }
 
-    pub fn name(&self) -> &str { "mongodb-sink" }
+    pub fn name(&self) -> &str {
+        "mongodb-sink"
+    }
 
     pub fn put(&mut self, records: Vec<Vec<u8>>) {
         for record in records {
             let value = match serde_json::from_slice::<Value>(&record) {
                 Ok(v) => v,
-                Err(_) => serde_json::json!({ "_raw": String::from_utf8_lossy(&record).into_owned() }),
+                Err(_) => {
+                    serde_json::json!({ "_raw": String::from_utf8_lossy(&record).into_owned() })
+                }
             };
             self.buffer.push(value);
         }
     }
 
     pub fn flush(&mut self) -> Result<Vec<MongoCommand>, String> {
-        if self.buffer.is_empty() { return Ok(Vec::new()); }
+        if self.buffer.is_empty() {
+            return Ok(Vec::new());
+        }
 
         let mut commands = Vec::new();
         for chunk in self.buffer.chunks(self.config.batch_size.max(1)) {
@@ -126,9 +141,15 @@ impl MongoDbSink {
         Ok(commands)
     }
 
-    pub fn buffered_count(&self) -> usize { self.buffer.len() }
-    pub fn total_sent(&self) -> u64 { self.total_sent }
-    pub fn should_flush(&self) -> bool { self.buffer.len() >= self.config.batch_size }
+    pub fn buffered_count(&self) -> usize {
+        self.buffer.len()
+    }
+    pub fn total_sent(&self) -> u64 {
+        self.total_sent
+    }
+    pub fn should_flush(&self) -> bool {
+        self.buffer.len() >= self.config.batch_size
+    }
 
     fn build_command(&self, records: &[Value]) -> MongoCommand {
         let operation = match self.config.write_mode {
@@ -191,7 +212,9 @@ mod tests {
     #[test]
     fn test_from_config_str_upsert_missing_key() {
         let json = r#"{"database":"db","collection":"c","write_mode":"upsert"}"#;
-        assert!(MongoDbSink::from_config_str(json).unwrap_err().contains("upsert_key_field"));
+        assert!(MongoDbSink::from_config_str(json)
+            .unwrap_err()
+            .contains("upsert_key_field"));
     }
 
     #[test]

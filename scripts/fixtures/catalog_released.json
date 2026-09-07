@@ -1,0 +1,12 @@
+[
+  {
+    "name": "fixture-released",
+    "version": "0.1.0",
+    "description": "Positive control: the digest is the real sha256 of scripts/fixtures/artifacts/fixture_released.wasm, so structural, digests, and artifact-bound release validation must all accept it.",
+    "author": "streamline-ci",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.0.0-ci-fixture/fixture_released.wasm",
+    "categories": ["filtering"],
+    "min_streamline_version": "0.1.0",
+    "checksum": "sha256:a68332929568049a4fcfcfb52adc88c5a771dac1379589f8b33ecd93836796fb"
+  }
+]

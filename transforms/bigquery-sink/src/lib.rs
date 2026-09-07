@@ -30,7 +30,9 @@ pub struct BigQuerySinkConfig {
     pub batch_size: usize,
 }
 
-fn default_batch_size() -> usize { 500 }
+fn default_batch_size() -> usize {
+    500
+}
 
 impl Default for BigQuerySinkConfig {
     fn default() -> Self {
@@ -73,19 +75,31 @@ pub struct BigQuerySink {
 
 impl BigQuerySink {
     pub fn new(config: BigQuerySinkConfig) -> Self {
-        Self { config, buffer: Vec::new(), total_sent: 0 }
+        Self {
+            config,
+            buffer: Vec::new(),
+            total_sent: 0,
+        }
     }
 
     pub fn from_config_str(json: &str) -> Result<Self, String> {
-        let config: BigQuerySinkConfig = serde_json::from_str(json)
-            .map_err(|e| format!("Invalid config: {e}"))?;
-        if config.project_id.is_empty() { return Err("project_id is required".to_string()); }
-        if config.dataset.is_empty() { return Err("dataset is required".to_string()); }
-        if config.table.is_empty() { return Err("table is required".to_string()); }
+        let config: BigQuerySinkConfig =
+            serde_json::from_str(json).map_err(|e| format!("Invalid config: {e}"))?;
+        if config.project_id.is_empty() {
+            return Err("project_id is required".to_string());
+        }
+        if config.dataset.is_empty() {
+            return Err("dataset is required".to_string());
+        }
+        if config.table.is_empty() {
+            return Err("table is required".to_string());
+        }
         Ok(Self::new(config))
     }
 
-    pub fn name(&self) -> &str { "bigquery-sink" }
+    pub fn name(&self) -> &str {
+        "bigquery-sink"
+    }
 
     pub fn put(&mut self, records: Vec<Vec<u8>>) {
         for record in records {
@@ -98,22 +112,27 @@ impl BigQuerySink {
     }
 
     pub fn flush(&mut self) -> Result<Vec<BigQueryInsertRequest>, String> {
-        if self.buffer.is_empty() { return Ok(Vec::new()); }
+        if self.buffer.is_empty() {
+            return Ok(Vec::new());
+        }
 
         let mut requests = Vec::new();
         for chunk in self.buffer.chunks(self.config.batch_size.max(1)) {
-            let rows: Vec<BigQueryRow> = chunk.iter().map(|record| {
-                let insert_id = self.config.insert_id_field.as_ref().and_then(|field| {
-                    extract_field(record, field).map(|v| match v {
-                        Value::String(s) => s.clone(),
-                        other => other.to_string(),
-                    })
-                });
+            let rows: Vec<BigQueryRow> = chunk
+                .iter()
+                .map(|record| {
+                    let insert_id = self.config.insert_id_field.as_ref().and_then(|field| {
+                        extract_field(record, field).map(|v| match v {
+                            Value::String(s) => s.clone(),
+                            other => other.to_string(),
+                        })
+                    });
 
-                let json = self.apply_column_mapping(record);
+                    let json = self.apply_column_mapping(record);
 
-                BigQueryRow { insert_id, json }
-            }).collect();
+                    BigQueryRow { insert_id, json }
+                })
+                .collect();
 
             let record_count = rows.len();
             requests.push(BigQueryInsertRequest {
@@ -130,9 +149,15 @@ impl BigQuerySink {
         Ok(requests)
     }
 
-    pub fn buffered_count(&self) -> usize { self.buffer.len() }
-    pub fn total_sent(&self) -> u64 { self.total_sent }
-    pub fn should_flush(&self) -> bool { self.buffer.len() >= self.config.batch_size }
+    pub fn buffered_count(&self) -> usize {
+        self.buffer.len()
+    }
+    pub fn total_sent(&self) -> u64 {
+        self.total_sent
+    }
+    pub fn should_flush(&self) -> bool {
+        self.buffer.len() >= self.config.batch_size
+    }
 
     fn apply_column_mapping(&self, record: &Value) -> Value {
         match &self.config.column_mapping {
@@ -152,7 +177,9 @@ impl BigQuerySink {
 
 fn extract_field<'a>(record: &'a Value, field: &str) -> Option<&'a Value> {
     let mut current = record;
-    for part in field.split('.') { current = current.get(part)?; }
+    for part in field.split('.') {
+        current = current.get(part)?;
+    }
     Some(current)
 }
 
@@ -245,7 +272,9 @@ mod tests {
         mapping.insert("event".to_string(), "event_type".to_string());
         config.column_mapping = Some(mapping);
         let mut sink = BigQuerySink::new(config);
-        sink.put(vec![br#"{"user":{"name":"Bob"},"event":"click","extra":"ignored"}"#.to_vec()]);
+        sink.put(vec![
+            br#"{"user":{"name":"Bob"},"event":"click","extra":"ignored"}"#.to_vec(),
+        ]);
         let reqs = sink.flush().unwrap();
         let json = &reqs[0].rows[0].json;
         assert_eq!(json["user_name"], "Bob");

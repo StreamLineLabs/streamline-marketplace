@@ -2,6 +2,11 @@
 //!
 //! API for the hosted marketplace portal where users discover, rate, and install transforms.
 
+// The portal API is exercised by this module's unit tests but is not yet wired
+// into the registry binary's HTTP routes, so its items look unused to the
+// non-test build.
+#![allow(dead_code)]
+
 use serde::{Deserialize, Serialize};
 use std::collections::HashMap;
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -211,16 +216,21 @@ impl MarketplacePortal {
         let transforms = self.transforms.read().await;
         let mut entries: Vec<MarketplaceEntry> = transforms
             .values()
-            .filter(|e| category.map_or(true, |c| e.category == c))
+            .filter(|e| match category {
+                Some(c) => e.category == c,
+                None => true,
+            })
             .cloned()
             .collect();
 
         match sort {
             SortOption::Popular => entries.sort_by(|a, b| b.downloads.cmp(&a.downloads)),
             SortOption::Recent => entries.sort_by(|a, b| b.published_at.cmp(&a.published_at)),
-            SortOption::TopRated => {
-                entries.sort_by(|a, b| b.rating.partial_cmp(&a.rating).unwrap_or(std::cmp::Ordering::Equal))
-            }
+            SortOption::TopRated => entries.sort_by(|a, b| {
+                b.rating
+                    .partial_cmp(&a.rating)
+                    .unwrap_or(std::cmp::Ordering::Equal)
+            }),
             SortOption::MostDownloaded => entries.sort_by(|a, b| b.downloads.cmp(&a.downloads)),
         }
 
@@ -255,7 +265,11 @@ impl MarketplacePortal {
             .ok_or_else(|| "transform not found".to_string())?;
 
         // Enforce per-user review limit
-        let user_review_count = entry.reviews.iter().filter(|r| r.user == review.user).count();
+        let user_review_count = entry
+            .reviews
+            .iter()
+            .filter(|r| r.user == review.user)
+            .count();
         if user_review_count >= self.config.max_reviews_per_user {
             return Err("review limit reached for this user".into());
         }
@@ -279,8 +293,11 @@ impl MarketplacePortal {
     /// Get the list of featured transforms.
     pub async fn get_featured(&self) -> Vec<MarketplaceEntry> {
         let transforms = self.transforms.read().await;
-        let mut featured: Vec<MarketplaceEntry> =
-            transforms.values().filter(|e| e.featured).cloned().collect();
+        let mut featured: Vec<MarketplaceEntry> = transforms
+            .values()
+            .filter(|e| e.featured)
+            .cloned()
+            .collect();
         featured.sort_by(|a, b| b.downloads.cmp(&a.downloads));
         featured.truncate(self.config.featured_count);
         featured
@@ -317,7 +334,11 @@ impl MarketplacePortal {
     }
 
     /// Record a download for a transform and track it on the user.
-    pub async fn record_download(&self, transform_id: &str, user_id: Option<&str>) -> Result<(), String> {
+    pub async fn record_download(
+        &self,
+        transform_id: &str,
+        user_id: Option<&str>,
+    ) -> Result<(), String> {
         {
             let mut transforms = self.transforms.write().await;
             let entry = transforms
@@ -424,14 +445,20 @@ mod tests {
     #[tokio::test]
     async fn test_publish_transform() {
         let portal = MarketplacePortal::new(PortalConfig::default());
-        let id = portal.publish_transform(sample_entry("filter")).await.unwrap();
+        let id = portal
+            .publish_transform(sample_entry("filter"))
+            .await
+            .unwrap();
         assert!(!id.is_empty());
         assert_eq!(portal.stats().total_transforms, 1);
     }
 
     #[tokio::test]
     async fn test_publish_at_capacity() {
-        let cfg = PortalConfig { max_transforms: 1, ..Default::default() };
+        let cfg = PortalConfig {
+            max_transforms: 1,
+            ..Default::default()
+        };
         let portal = MarketplacePortal::new(cfg);
         portal.publish_transform(sample_entry("a")).await.unwrap();
         let res = portal.publish_transform(sample_entry("b")).await;
@@ -460,7 +487,9 @@ mod tests {
         portal.publish_transform(e).await.unwrap();
         portal.publish_transform(sample_entry("b")).await.unwrap();
 
-        let results = portal.list_transforms(Some("etl"), SortOption::Recent, 0, 10).await;
+        let results = portal
+            .list_transforms(Some("etl"), SortOption::Recent, 0, 10)
+            .await;
         assert_eq!(results.len(), 1);
         assert_eq!(results[0].category, "etl");
     }
@@ -469,7 +498,10 @@ mod tests {
     async fn test_list_transforms_pagination() {
         let portal = MarketplacePortal::new(PortalConfig::default());
         for i in 0..5 {
-            portal.publish_transform(sample_entry(&format!("t{i}"))).await.unwrap();
+            portal
+                .publish_transform(sample_entry(&format!("t{i}")))
+                .await
+                .unwrap();
         }
         let page = portal.list_transforms(None, SortOption::Recent, 1, 2).await;
         assert_eq!(page.len(), 2);
@@ -485,15 +517,23 @@ mod tests {
         portal.publish_transform(a).await.unwrap();
         portal.publish_transform(b).await.unwrap();
 
-        let results = portal.list_transforms(None, SortOption::Popular, 0, 10).await;
+        let results = portal
+            .list_transforms(None, SortOption::Popular, 0, 10)
+            .await;
         assert_eq!(results[0].name, "high");
     }
 
     #[tokio::test]
     async fn test_search_by_name() {
         let portal = MarketplacePortal::new(PortalConfig::default());
-        portal.publish_transform(sample_entry("json-filter")).await.unwrap();
-        portal.publish_transform(sample_entry("csv-parser")).await.unwrap();
+        portal
+            .publish_transform(sample_entry("json-filter"))
+            .await
+            .unwrap();
+        portal
+            .publish_transform(sample_entry("csv-parser"))
+            .await
+            .unwrap();
 
         let results = portal.search("json").await;
         assert_eq!(results.len(), 1);
@@ -515,7 +555,12 @@ mod tests {
     async fn test_add_review() {
         let portal = MarketplacePortal::new(PortalConfig::default());
         let id = portal.publish_transform(sample_entry("t")).await.unwrap();
-        let review = Review { user: "bob".into(), rating: 4, comment: "great".into(), created_at: String::new() };
+        let review = Review {
+            user: "bob".into(),
+            rating: 4,
+            comment: "great".into(),
+            created_at: String::new(),
+        };
         portal.add_review(&id, review).await.unwrap();
 
         let entry = portal.get_transform(&id).await.unwrap();
@@ -527,20 +572,33 @@ mod tests {
     async fn test_add_review_invalid_rating() {
         let portal = MarketplacePortal::new(PortalConfig::default());
         let id = portal.publish_transform(sample_entry("t")).await.unwrap();
-        let review = Review { user: "u".into(), rating: 6, comment: "".into(), created_at: String::new() };
+        let review = Review {
+            user: "u".into(),
+            rating: 6,
+            comment: "".into(),
+            created_at: String::new(),
+        };
         assert!(portal.add_review(&id, review).await.is_err());
     }
 
     #[tokio::test]
     async fn test_add_review_transform_not_found() {
         let portal = MarketplacePortal::new(PortalConfig::default());
-        let review = Review { user: "u".into(), rating: 3, comment: "ok".into(), created_at: String::new() };
+        let review = Review {
+            user: "u".into(),
+            rating: 3,
+            comment: "ok".into(),
+            created_at: String::new(),
+        };
         assert!(portal.add_review("nope", review).await.is_err());
     }
 
     #[tokio::test]
     async fn test_get_featured() {
-        let portal = MarketplacePortal::new(PortalConfig { featured_count: 1, ..Default::default() });
+        let portal = MarketplacePortal::new(PortalConfig {
+            featured_count: 1,
+            ..Default::default()
+        });
         let mut e1 = sample_entry("a");
         e1.featured = true;
         e1.downloads = 10;
@@ -615,8 +673,18 @@ mod tests {
     async fn test_review_recalculates_average() {
         let portal = MarketplacePortal::new(PortalConfig::default());
         let id = portal.publish_transform(sample_entry("t")).await.unwrap();
-        let r1 = Review { user: "a".into(), rating: 2, comment: "".into(), created_at: String::new() };
-        let r2 = Review { user: "b".into(), rating: 4, comment: "".into(), created_at: String::new() };
+        let r1 = Review {
+            user: "a".into(),
+            rating: 2,
+            comment: "".into(),
+            created_at: String::new(),
+        };
+        let r2 = Review {
+            user: "b".into(),
+            rating: 4,
+            comment: "".into(),
+            created_at: String::new(),
+        };
         portal.add_review(&id, r1).await.unwrap();
         portal.add_review(&id, r2).await.unwrap();
 

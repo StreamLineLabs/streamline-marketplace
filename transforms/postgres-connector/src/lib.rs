@@ -44,18 +44,19 @@ pub struct PostgresConnectorConfig {
 fn default_connection_url() -> String {
     "postgresql://localhost:5432/streamline".to_string()
 }
-fn default_schema() -> String { "public".to_string() }
-fn default_batch_size() -> usize { 100 }
-
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
-#[serde(rename_all = "lowercase")]
-pub enum WriteMode {
-    Insert,
-    Upsert,
+fn default_schema() -> String {
+    "public".to_string()
+}
+fn default_batch_size() -> usize {
+    100
 }
 
-impl Default for WriteMode {
-    fn default() -> Self { WriteMode::Insert }
+#[derive(Default, Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[serde(rename_all = "lowercase")]
+pub enum WriteMode {
+    #[default]
+    Insert,
+    Upsert,
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
@@ -69,7 +70,9 @@ pub struct ColumnMapping {
     pub sql_type: String,
 }
 
-fn default_sql_type() -> String { "TEXT".to_string() }
+fn default_sql_type() -> String {
+    "TEXT".to_string()
+}
 
 impl Default for PostgresConnectorConfig {
     fn default() -> Self {
@@ -116,8 +119,8 @@ impl PostgresConnector {
 
     /// Create from a JSON configuration string.
     pub fn from_config_str(json: &str) -> Result<Self, String> {
-        let config: PostgresConnectorConfig = serde_json::from_str(json)
-            .map_err(|e| format!("Invalid config: {e}"))?;
+        let config: PostgresConnectorConfig =
+            serde_json::from_str(json).map_err(|e| format!("Invalid config: {e}"))?;
         if config.table.is_empty() {
             return Err("table is required".to_string());
         }
@@ -184,7 +187,11 @@ impl PostgresConnector {
 
         let columns = self.resolve_columns(&records[0]);
         let table = format!("{}.{}", self.config.schema, self.config.table);
-        let col_names = columns.iter().map(|c| c.as_str()).collect::<Vec<_>>().join(", ");
+        let col_names = columns
+            .iter()
+            .map(|c| c.as_str())
+            .collect::<Vec<_>>()
+            .join(", ");
 
         let mut params = Vec::new();
         let mut value_clauses = Vec::new();
@@ -206,7 +213,8 @@ impl PostgresConnector {
             }
             WriteMode::Upsert => {
                 let conflict = self.config.conflict_columns.join(", ");
-                let update_cols: Vec<String> = columns.iter()
+                let update_cols: Vec<String> = columns
+                    .iter()
                     .filter(|c| !self.config.conflict_columns.contains(c))
                     .map(|c| format!("{c} = EXCLUDED.{c}"))
                     .collect();
@@ -230,7 +238,12 @@ impl PostgresConnector {
 
     fn resolve_columns(&self, sample: &Value) -> Vec<String> {
         if !self.config.column_mapping.is_empty() {
-            return self.config.column_mapping.iter().map(|m| m.column.clone()).collect();
+            return self
+                .config
+                .column_mapping
+                .iter()
+                .map(|m| m.column.clone())
+                .collect();
         }
         // Auto-detect columns from JSON keys
         match sample.as_object() {
@@ -241,14 +254,18 @@ impl PostgresConnector {
 
     fn extract_row(&self, columns: &[String], record: &Value) -> Vec<String> {
         if !self.config.column_mapping.is_empty() {
-            return self.config.column_mapping.iter().map(|mapping| {
-                extract_json_field(record, &mapping.field)
-            }).collect();
+            return self
+                .config
+                .column_mapping
+                .iter()
+                .map(|mapping| extract_json_field(record, &mapping.field))
+                .collect();
         }
         // Auto-extract by column name
-        columns.iter().map(|col| {
-            extract_json_field(record, col)
-        }).collect()
+        columns
+            .iter()
+            .map(|col| extract_json_field(record, col))
+            .collect()
     }
 }
 
@@ -309,7 +326,10 @@ mod tests {
     fn test_from_config_str_missing_table() {
         let json = r#"{"mode":"insert"}"#;
         let err = PostgresConnector::from_config_str(json).unwrap_err();
-        assert!(err.contains("table") || err.contains("missing field"), "unexpected error: {err}");
+        assert!(
+            err.contains("table") || err.contains("missing field"),
+            "unexpected error: {err}"
+        );
     }
 
     #[test]
@@ -333,7 +353,9 @@ mod tests {
     #[test]
     fn test_upsert_statement() {
         let mut sink = PostgresConnector::new(upsert_config());
-        sink.put(vec![br#"{"id":"u1","name":"Alice","email":"a@b.com"}"#.to_vec()]);
+        sink.put(vec![
+            br#"{"id":"u1","name":"Alice","email":"a@b.com"}"#.to_vec()
+        ]);
         let stmts = sink.flush().unwrap();
         assert_eq!(stmts.len(), 1);
         assert!(stmts[0].sql.contains("ON CONFLICT (id)"));
@@ -359,8 +381,16 @@ mod tests {
         let config = PostgresConnectorConfig {
             table: "events".to_string(),
             column_mapping: vec![
-                ColumnMapping { field: "user.name".to_string(), column: "username".to_string(), sql_type: "TEXT".to_string() },
-                ColumnMapping { field: "action".to_string(), column: "action_type".to_string(), sql_type: "TEXT".to_string() },
+                ColumnMapping {
+                    field: "user.name".to_string(),
+                    column: "username".to_string(),
+                    sql_type: "TEXT".to_string(),
+                },
+                ColumnMapping {
+                    field: "action".to_string(),
+                    column: "action_type".to_string(),
+                    sql_type: "TEXT".to_string(),
+                },
             ],
             ..Default::default()
         };

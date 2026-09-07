@@ -29,19 +29,20 @@ pub struct MySqlSinkConfig {
     pub batch_size: usize,
 }
 
-fn default_url() -> String { "mysql://localhost:3306/streamline".to_string() }
-fn default_batch_size() -> usize { 500 }
+fn default_url() -> String {
+    "mysql://localhost:3306/streamline".to_string()
+}
+fn default_batch_size() -> usize {
+    500
+}
 
-#[derive(Debug, Clone, Deserialize, Serialize, PartialEq)]
+#[derive(Default, Debug, Clone, Deserialize, Serialize, PartialEq)]
 #[serde(rename_all = "snake_case")]
 pub enum WriteMode {
+    #[default]
     Insert,
     Replace,
     InsertIgnore,
-}
-
-impl Default for WriteMode {
-    fn default() -> Self { WriteMode::Insert }
 }
 
 impl Default for MySqlSinkConfig {
@@ -78,28 +79,39 @@ pub struct MySqlSink {
 
 impl MySqlSink {
     pub fn new(config: MySqlSinkConfig) -> Self {
-        Self { config, buffer: Vec::new(), total_sent: 0 }
+        Self {
+            config,
+            buffer: Vec::new(),
+            total_sent: 0,
+        }
     }
 
     pub fn from_config_str(json: &str) -> Result<Self, String> {
-        let config: MySqlSinkConfig = serde_json::from_str(json)
-            .map_err(|e| format!("Invalid config: {e}"))?;
-        if config.table.is_empty() { return Err("table is required".to_string()); }
+        let config: MySqlSinkConfig =
+            serde_json::from_str(json).map_err(|e| format!("Invalid config: {e}"))?;
+        if config.table.is_empty() {
+            return Err("table is required".to_string());
+        }
         Ok(Self::new(config))
     }
 
-    pub fn name(&self) -> &str { "mysql-sink" }
+    pub fn name(&self) -> &str {
+        "mysql-sink"
+    }
 
     pub fn put(&mut self, records: Vec<Vec<u8>>) {
         for record in records {
-            let value = serde_json::from_slice::<Value>(&record)
-                .unwrap_or_else(|_| serde_json::json!({ "_raw": String::from_utf8_lossy(&record).into_owned() }));
+            let value = serde_json::from_slice::<Value>(&record).unwrap_or_else(
+                |_| serde_json::json!({ "_raw": String::from_utf8_lossy(&record).into_owned() }),
+            );
             self.buffer.push(value);
         }
     }
 
     pub fn flush(&mut self) -> Result<Vec<MySqlStatement>, String> {
-        if self.buffer.is_empty() { return Ok(Vec::new()); }
+        if self.buffer.is_empty() {
+            return Ok(Vec::new());
+        }
 
         let mut statements = Vec::new();
         for chunk in self.buffer.chunks(self.config.batch_size.max(1)) {
@@ -111,15 +123,27 @@ impl MySqlSink {
         Ok(statements)
     }
 
-    pub fn buffered_count(&self) -> usize { self.buffer.len() }
-    pub fn total_sent(&self) -> u64 { self.total_sent }
-    pub fn should_flush(&self) -> bool { self.buffer.len() >= self.config.batch_size }
+    pub fn buffered_count(&self) -> usize {
+        self.buffer.len()
+    }
+    pub fn total_sent(&self) -> u64 {
+        self.total_sent
+    }
+    pub fn should_flush(&self) -> bool {
+        self.buffer.len() >= self.config.batch_size
+    }
 
     fn build_statement(&self, records: &[Value]) -> Result<MySqlStatement, String> {
-        if records.is_empty() { return Err("Empty batch".to_string()); }
+        if records.is_empty() {
+            return Err("Empty batch".to_string());
+        }
 
         let columns = self.resolve_columns(&records[0]);
-        let col_names = columns.iter().map(|c| format!("`{c}`")).collect::<Vec<_>>().join(", ");
+        let col_names = columns
+            .iter()
+            .map(|c| format!("`{c}`"))
+            .collect::<Vec<_>>()
+            .join(", ");
 
         let keyword = match self.config.write_mode {
             WriteMode::Insert => "INSERT INTO",
@@ -162,7 +186,10 @@ impl MySqlSink {
     }
 
     fn extract_row(&self, columns: &[String], record: &Value) -> Vec<Value> {
-        columns.iter().map(|col| extract_field_value(record, col)).collect()
+        columns
+            .iter()
+            .map(|col| extract_field_value(record, col))
+            .collect()
     }
 }
 
@@ -182,7 +209,10 @@ mod tests {
     use super::*;
 
     fn test_config() -> MySqlSinkConfig {
-        MySqlSinkConfig { table: "events".to_string(), ..Default::default() }
+        MySqlSinkConfig {
+            table: "events".to_string(),
+            ..Default::default()
+        }
     }
 
     #[test]
@@ -241,7 +271,9 @@ mod tests {
         let mut config = test_config();
         config.columns = vec!["name".to_string(), "age".to_string()];
         let mut sink = MySqlSink::new(config);
-        sink.put(vec![br#"{"name":"Bob","age":25,"extra":"ignored"}"#.to_vec()]);
+        sink.put(vec![
+            br#"{"name":"Bob","age":25,"extra":"ignored"}"#.to_vec()
+        ]);
         let stmts = sink.flush().unwrap();
         assert!(stmts[0].sql.contains("`name`"));
         assert!(stmts[0].sql.contains("`age`"));

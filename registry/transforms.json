@@ -5,12 +5,12 @@
     "description": "Filter messages by JSON field values. Supports equality, comparison, regex, and existence operators on any JSON path.",
     "author": "StreamlineLabs",
     "downloads": 1250,
-    "checksum": "sha256:a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2",
+    "checksum": "sha256:0eb2414349ee37eae8f1bc4946104b83007bc47bf17eda49001959edbce36fbb",
     "categories": [
       "filtering"
     ],
     "min_streamline_version": "0.1.0",
-    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/json_filter.wasm",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/json_filter.wasm",
     "input_format": "json",
     "output_format": "json",
     "tags": [
@@ -46,7 +46,7 @@
     "description": "Transform JSON structure with field renaming, flattening, nested field extraction, and type coercion.",
     "author": "StreamlineLabs",
     "downloads": 980,
-    "checksum": "sha256:b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3",
+    "checksum": "pending",
     "categories": [
       "format-conversion"
     ],
@@ -77,7 +77,7 @@
     "description": "Convert CSV-formatted messages to JSON objects. Supports custom delimiters, header detection, and type inference.",
     "author": "StreamlineLabs",
     "downloads": 720,
-    "checksum": "sha256:c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4",
+    "checksum": "pending",
     "categories": [
       "format-conversion"
     ],
@@ -120,7 +120,7 @@
     "description": "Convert JSON messages to Avro binary format using a provided schema. Integrates with Streamline Schema Registry.",
     "author": "StreamlineLabs",
     "downloads": 540,
-    "checksum": "sha256:d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5",
+    "checksum": "pending",
     "categories": [
       "format-conversion"
     ],
@@ -151,12 +151,12 @@
     "description": "Add processing timestamps and time-related metadata to JSON messages. Supports multiple timestamp formats and timezone conversion.",
     "author": "StreamlineLabs",
     "downloads": 1100,
-    "checksum": "sha256:e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6",
+    "checksum": "sha256:7683645386c5c03e1fb17f8400090fbd5402da24b35e3fd6447f35ab1ca180a8",
     "categories": [
       "enrichment"
     ],
     "min_streamline_version": "0.1.0",
-    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/timestamp_enricher.wasm",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/timestamp_enricher.wasm",
     "input_format": "json",
     "output_format": "json",
     "tags": [
@@ -195,12 +195,12 @@
     "description": "Detect and redact personally identifiable information (PII) from JSON messages using regex patterns. Supports emails, phone numbers, SSNs, credit cards, and custom patterns.",
     "author": "StreamlineLabs",
     "downloads": 890,
-    "checksum": "sha256:f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1b2c3d4e5f6a1",
+    "checksum": "sha256:5a9044daa8f0f1269cc9e65d72ff9cb8eb0443992da630511df242afb8e24c45",
     "categories": [
       "security"
     ],
     "min_streamline_version": "0.1.0",
-    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/pii_redactor.wasm",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/pii_redactor.wasm",
     "input_format": "json",
     "output_format": "json",
     "tags": [
@@ -243,13 +243,13 @@
     "description": "Validate JSON messages against a JSON Schema. Invalid messages are dropped or routed to a dead-letter topic.",
     "author": "StreamlineLabs",
     "downloads": 670,
-    "checksum": "sha256:a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3c4d5e6f7a2b3",
+    "checksum": "sha256:b4a6f7020eca46ea5ce114a70d980ac463ba6b795860b754c3ff07731df36dd1",
     "categories": [
       "filtering",
       "analytics"
     ],
     "min_streamline_version": "0.1.0",
-    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/schema_validator.wasm",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/schema_validator.wasm",
     "input_format": "json",
     "output_format": "json",
     "tags": [
@@ -281,12 +281,12 @@
     "description": "Route messages to different output topics based on the value of a configurable JSON field. Supports exact match, regex, and range-based routing rules.",
     "author": "StreamlineLabs",
     "downloads": 430,
-    "checksum": "sha256:b3c4d5e6f7a1b3c4d5e6f7a1b3c4d5e6f7a1b3c4d5e6f7a1b3c4d5e6f7a1b3c4",
+    "checksum": "sha256:a3342804b3ad645c3ee5087d100bb691c24a15d49a291177ff7fb0311c2744fa",
     "categories": [
       "routing"
     ],
     "min_streamline_version": "0.1.0",
-    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.1.0/field_router.wasm",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/field_router.wasm",
     "input_format": "json",
     "output_format": "json",
     "tags": [
@@ -322,7 +322,7 @@
     "description": "Remove duplicate messages based on a configurable deduplication key. Uses a time-windowed bloom filter for memory efficiency.",
     "author": "StreamlineLabs",
     "downloads": 560,
-    "checksum": "sha256:c4d5e6f7a1b2c4d5e6f7a1b2c4d5e6f7a1b2c4d5e6f7a1b2c4d5e6f7a1b2c4d5",
+    "checksum": "pending",
     "categories": [
       "filtering"
     ],
@@ -365,7 +365,7 @@
     "description": "Rate-limit message throughput using a token bucket algorithm. Excess messages are dropped or delayed.",
     "author": "StreamlineLabs",
     "downloads": 380,
-    "checksum": "sha256:d5e6f7a1b2c3d5e6f7a1b2c3d5e6f7a1b2c3d5e6f7a1b2c3d5e6f7a1b2c3d5e6",
+    "checksum": "pending",
     "categories": [
       "filtering",
       "analytics"
@@ -408,7 +408,7 @@
     "description": "Enrich JSON messages with geolocation data by resolving IP addresses to country, city, and coordinates using an embedded GeoIP database.",
     "author": "StreamlineLabs",
     "downloads": 310,
-    "checksum": "sha256:e6f7a1b2c3d4e6f7a1b2c3d4e6f7a1b2c3d4e6f7a1b2c3d4e6f7a1b2c3d4e6f7",
+    "checksum": "pending",
     "categories": [
       "enrichment"
     ],
@@ -457,14 +457,14 @@
     "description": "Classify messages using LLM providers (OpenAI, Anthropic, Ollama). Adds a classification label and confidence score to each message based on configurable categories.",
     "author": "StreamlineLabs",
     "downloads": 0,
-    "checksum": "sha256:pending",
+    "checksum": "sha256:82011fb37efa1c9729e5ef0aa46596365c932335f006eb4fa883d943627484e4",
     "categories": [
       "analytics",
       "filtering",
       "enrichment"
     ],
     "min_streamline_version": "0.2.0",
-    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.2.0/ai_classifier.wasm",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/ai_classifier.wasm",
     "input_format": "json",
     "output_format": "json",
     "tags": [
@@ -521,7 +521,7 @@
     "description": "Summarize message content using LLM providers. Useful for reducing verbose log entries, compacting event descriptions, or generating abstracts from long-form content.",
     "author": "StreamlineLabs",
     "downloads": 0,
-    "checksum": "sha256:pending",
+    "checksum": "pending",
     "categories": [
       "analytics",
       "enrichment",
@@ -582,7 +582,7 @@
     "description": "Extract named entities (people, organizations, locations, dates, amounts) from message text using LLM providers. Adds structured entity annotations to each message.",
     "author": "StreamlineLabs",
     "downloads": 0,
-    "checksum": "sha256:pending",
+    "checksum": "pending",
     "categories": [
       "analytics",
       "enrichment",
@@ -673,7 +673,7 @@
       "conversion",
       "schema-registry"
     ],
-    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "checksum": "pending",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/protobuf-to-json",
     "downloads": 0
   },
@@ -732,7 +732,7 @@
       "api",
       "lookup"
     ],
-    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "checksum": "pending",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/http-enricher",
     "downloads": 0
   },
@@ -776,7 +776,7 @@
       "array",
       "fan-out"
     ],
-    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "checksum": "pending",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/message-splitter",
     "downloads": 0
   },
@@ -824,7 +824,7 @@
       "deduplication",
       "security"
     ],
-    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "checksum": "pending",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/content-hash",
     "downloads": 0
   },
@@ -883,7 +883,7 @@
       "analytics",
       "monitoring"
     ],
-    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "checksum": "pending",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/metrics-extractor",
     "downloads": 0
   },
@@ -938,7 +938,7 @@
       "pii",
       "security"
     ],
-    "checksum": "sha256:0000000000000000000000000000000000000000000000000000000000000000",
+    "checksum": "pending",
     "repository_url": "https://github.com/streamlinelabs/streamline-marketplace/tree/main/transforms/data-masking",
     "downloads": 0
   },
@@ -948,7 +948,7 @@
     "description": "Write messages to Amazon S3 in JSON, NDJSON, or CSV format. Supports batch chunking, partition templates, and compression.",
     "author": "StreamlineLabs",
     "downloads": 420,
-    "checksum": "sha256:b2c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3",
+    "checksum": "pending",
     "categories": [
       "sink"
     ],
@@ -1002,7 +1002,7 @@
     "description": "Write messages to PostgreSQL via INSERT or UPSERT. Supports column mapping and batch operations.",
     "author": "StreamlineLabs",
     "downloads": 310,
-    "checksum": "sha256:c3d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4",
+    "checksum": "pending",
     "categories": [
       "sink"
     ],
@@ -1050,7 +1050,7 @@
     "description": "Index messages into Elasticsearch using the Bulk API. Supports index templating, document ID extraction, and ingest pipelines.",
     "author": "StreamlineLabs",
     "downloads": 0,
-    "checksum": "sha256:d4e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5",
+    "checksum": "pending",
     "categories": [
       "sink"
     ],
@@ -1102,7 +1102,7 @@
     "description": "Write messages to MongoDB via insertMany or bulk upsert. Supports configurable write modes and batch sizes.",
     "author": "StreamlineLabs",
     "downloads": 0,
-    "checksum": "sha256:e5f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6",
+    "checksum": "pending",
     "categories": [
       "sink"
     ],
@@ -1154,7 +1154,7 @@
     "description": "Write messages to MySQL via INSERT, REPLACE, or INSERT IGNORE. Supports column mapping and batch operations.",
     "author": "StreamlineLabs",
     "downloads": 0,
-    "checksum": "sha256:f6a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7",
+    "checksum": "pending",
     "categories": [
       "sink"
     ],
@@ -1206,7 +1206,7 @@
     "description": "Write messages to Redis using SET, XADD, LPUSH, or PUBLISH commands. Supports key prefixes and TTL.",
     "author": "StreamlineLabs",
     "downloads": 0,
-    "checksum": "sha256:a7b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8",
+    "checksum": "pending",
     "categories": [
       "sink"
     ],
@@ -1257,7 +1257,7 @@
     "description": "Load messages into Snowflake tables via staged NDJSON files. Supports batch chunking and warehouse selection.",
     "author": "StreamlineLabs",
     "downloads": 0,
-    "checksum": "sha256:b8c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9",
+    "checksum": "pending",
     "categories": [
       "sink"
     ],
@@ -1313,7 +1313,7 @@
     "description": "Stream messages into Google BigQuery via the tabledata.insertAll API. Supports insert ID deduplication and column mapping.",
     "author": "StreamlineLabs",
     "downloads": 0,
-    "checksum": "sha256:c9d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0",
+    "checksum": "pending",
     "categories": [
       "sink"
     ],
@@ -1366,7 +1366,7 @@
     "description": "Forward messages to any HTTP endpoint via POST or PUT. Supports authentication (Bearer, Basic, API key), batch mode, and retry.",
     "author": "StreamlineLabs",
     "downloads": 0,
-    "checksum": "sha256:d0e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1",
+    "checksum": "pending",
     "categories": [
       "sink"
     ],
@@ -1421,7 +1421,7 @@
     "description": "Send messages to Slack channels via incoming webhooks. Supports message templating with field substitution.",
     "author": "StreamlineLabs",
     "downloads": 0,
-    "checksum": "sha256:e1f2a3b4c5d6e7f8a9b0c1d2e3f4a5b6c7d8e9f0a1b2c3d4e5f6a7b8c9d0e1f2",
+    "checksum": "pending",
     "categories": [
       "sink"
     ],

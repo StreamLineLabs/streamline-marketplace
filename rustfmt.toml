@@ -1,6 +1,10 @@
 # Rustfmt configuration
 # See: https://rust-lang.github.io/rustfmt/
+#
+# Only stable rustfmt options are configured here. Nightly-gated options
+# (e.g. `imports_granularity`) are silently ignored on the stable channel and
+# emit a warning on every `cargo fmt` invocation, so they are intentionally
+# omitted to keep formatting reproducible across toolchains.
 
 max_width = 100
 use_field_init_shorthand = true
-imports_granularity = "Crate"

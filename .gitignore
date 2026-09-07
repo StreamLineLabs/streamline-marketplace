@@ -36,3 +36,15 @@ registry/data/wasm/
 target/
 *.wasm
 pkg/
+
+# Staged release artifacts (built locally, verified by the release gate)
+/dist/
+
+# Hermetic release-validation fixtures. These bytes are the control for
+# artifact-bound checksum validation, so they must be versioned despite the
+# blanket *.wasm ignore above.
+!scripts/fixtures/artifacts/*.wasm
+
+# Python bytecode from the validator scripts and their tests
+__pycache__/
+*.pyc

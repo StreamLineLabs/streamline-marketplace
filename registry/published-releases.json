@@ -1,0 +1,46 @@
+{
+  "v0.3.0": [
+    {
+      "name": "json-filter",
+      "version": "0.1.0",
+      "asset": "json_filter.wasm",
+      "url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/json_filter.wasm",
+      "checksum": "sha256:0eb2414349ee37eae8f1bc4946104b83007bc47bf17eda49001959edbce36fbb"
+    },
+    {
+      "name": "timestamp-enricher",
+      "version": "0.1.0",
+      "asset": "timestamp_enricher.wasm",
+      "url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/timestamp_enricher.wasm",
+      "checksum": "sha256:7683645386c5c03e1fb17f8400090fbd5402da24b35e3fd6447f35ab1ca180a8"
+    },
+    {
+      "name": "pii-redactor",
+      "version": "0.1.0",
+      "asset": "pii_redactor.wasm",
+      "url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/pii_redactor.wasm",
+      "checksum": "sha256:5a9044daa8f0f1269cc9e65d72ff9cb8eb0443992da630511df242afb8e24c45"
+    },
+    {
+      "name": "schema-validator",
+      "version": "0.1.0",
+      "asset": "schema_validator.wasm",
+      "url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/schema_validator.wasm",
+      "checksum": "sha256:b4a6f7020eca46ea5ce114a70d980ac463ba6b795860b754c3ff07731df36dd1"
+    },
+    {
+      "name": "field-router",
+      "version": "0.1.0",
+      "asset": "field_router.wasm",
+      "url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/field_router.wasm",
+      "checksum": "sha256:a3342804b3ad645c3ee5087d100bb691c24a15d49a291177ff7fb0311c2744fa"
+    },
+    {
+      "name": "ai-classifier",
+      "version": "0.1.0",
+      "asset": "ai_classifier.wasm",
+      "url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.3.0/ai_classifier.wasm",
+      "checksum": "sha256:82011fb37efa1c9729e5ef0aa46596365c932335f006eb4fa883d943627484e4"
+    }
+  ]
+}

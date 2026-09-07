@@ -1,0 +1,22 @@
+[
+  {
+    "name": "fixture-released",
+    "version": "0.1.0",
+    "description": "Negative control (first of a duplicated pair): a valid, artifact-bound entry.",
+    "author": "streamline-ci",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.0.0-ci-fixture/fixture_released.wasm",
+    "categories": ["filtering"],
+    "min_streamline_version": "0.1.0",
+    "checksum": "sha256:a68332929568049a4fcfcfb52adc88c5a771dac1379589f8b33ecd93836796fb"
+  },
+  {
+    "name": "fixture-released",
+    "version": "0.1.0",
+    "description": "Negative control (second of a duplicated pair): the same name/version published twice makes the catalog ambiguous about which entry pins the artifact, so validation must reject it in every mode.",
+    "author": "streamline-ci",
+    "wasm_url": "https://github.com/streamlinelabs/streamline-marketplace/releases/download/v0.0.0-ci-fixture/fixture_released.wasm",
+    "categories": ["filtering"],
+    "min_streamline_version": "0.1.0",
+    "checksum": "sha256:a68332929568049a4fcfcfb52adc88c5a771dac1379589f8b33ecd93836796fb"
+  }
+]

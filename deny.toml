@@ -1,18 +1,20 @@
 # cargo-deny configuration
-# Run with: cargo deny check
+# Run with: cargo deny check advisories bans licenses sources
+#
+# Schema: cargo-deny 0.14+ (used by cargo-deny-action@v2). Unlisted licenses are
+# denied by default, so copyleft licenses such as GPL/AGPL are rejected unless
+# explicitly allowed below.
 
 [graph]
 targets = [
     "x86_64-unknown-linux-gnu",
     "x86_64-apple-darwin",
     "aarch64-apple-darwin",
+    "wasm32-wasip1",
 ]
 
 [advisories]
-vulnerability = "deny"
-unmaintained = "warn"
 yanked = "warn"
-notice = "warn"
 ignore = []
 
 [licenses]
@@ -28,8 +30,11 @@ allow = [
     "0BSD",
     "CC0-1.0",
     "Unicode-DFS-2016",
+    "Unicode-3.0",
+    "MPL-2.0",
+    # webpki-roots ships the Mozilla CA bundle as data under CDLA-Permissive-2.0.
+    "CDLA-Permissive-2.0",
 ]
-deny = ["GPL-2.0", "GPL-3.0", "AGPL-3.0"]
 
 [[licenses.clarify]]
 name = "ring"

@@ -19,11 +19,15 @@ members = [
     "transforms/mysql-sink",
     "transforms/slack-sink",
 ]
+exclude = [
+    # cargo-generate template: its package name is a placeholder, so it must
+    # never be picked up as a workspace member.
+    "connector-sdk/template",
+]
 resolver = "2"
 
 [workspace.package]
-version = "0.3.0"
+version = "0.4.0"
 edition = "2021"
 license = "Apache-2.0"
 repository = "https://github.com/streamlinelabs/streamline-marketplace"
-

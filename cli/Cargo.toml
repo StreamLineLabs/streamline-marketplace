@@ -3,6 +3,7 @@ name = "streamline-marketplace-cli"
 version.workspace = true
 edition.workspace = true
 license.workspace = true
+rust-version = "1.85"
 description = "CLI tool for the Streamline WASM Transform Marketplace"
 
 [[bin]]
@@ -18,4 +19,3 @@ colored = "2.1"
 dirs = "5.0"
 sha2 = "0.10"
 hex = "0.4"
-indicatif = "0.17"

@@ -9,6 +9,20 @@
 
 A registry and discovery system for user-contributed WebAssembly (WASM) transforms for [Streamline](https://github.com/streamlinelabs/streamline) -- "The Redis of Streaming".
 
+## Security scanning
+
+CodeQL is an explicit opt-in because its result upload requires repository code
+scanning to be enabled. Maintainers must first enable code scanning / GitHub
+Advanced Security as applicable, then create the repository Actions variable
+`CODEQL_ENABLED=true`. Until both are configured, the CodeQL job is neutrally
+skipped rather than reporting a misleading failure.
+
+When enabled, CodeQL v4 analyzes the Rust source and GitHub Actions workflows;
+it does not claim C/C++ coverage. The unconditional CI Clippy/tests and
+`cargo-deny` advisory, license, ban, and source checks remain the mandatory
+release security baseline while CodeQL is disabled. Run
+`make check-workflows` to verify this workflow contract locally.
+
 ## Overview
 
 The WASM Transform Marketplace enables the Streamline community to share, discover, and install reusable stream processing transforms. Each transform is a compiled WebAssembly module that runs inside the Streamline server's sandboxed `wasmtime` runtime, providing safe and performant message processing without external dependencies.
@@ -182,11 +196,118 @@ streamline-cli transforms deploy \
   --config '{"field": "status", "operator": "eq", "value": "active"}'
 ```
 
+## Running the Registry Server
+
+The registry server fails closed on unsafe configuration:
+
+| Variable | Required | Default | Meaning |
+|---|---|---|---|
+| `REGISTRY_AUTH_TOKEN` | **yes** | none — the server refuses to start | Bearer token required by `POST /api/v1/transforms`. Minimum 16 printable ASCII characters; there is no development fallback. |
+| `REGISTRY_BIND` | no | `127.0.0.1:8080` | Listen address. Binding publicly must be explicit. |
+| `REGISTRY_ALLOWED_ORIGINS` | no | empty (no cross-origin access) | Comma-separated browser origins, e.g. `https://portal.example.com`. Wildcards, paths, and non-HTTP schemes are rejected at startup. |
+| `REGISTRY_DATA_DIR` | no | `registry/data` | Catalog and artifact storage. Unreadable or corrupt catalogs abort startup instead of presenting an empty registry. |
+
+```bash
+REGISTRY_AUTH_TOKEN="$(openssl rand -hex 24)" \
+REGISTRY_BIND=127.0.0.1:8080 \
+  cargo run -p streamline-marketplace-registry
+```
+
+### Checksum policy
+
+Catalog checksums are either a canonical `sha256:<64 hex>` digest of the released
+artifact or the literal sentinel `pending`, which means "no released artifact
+exists yet". Verification fails closed: empty, `pending`, non-SHA-256, and
+malformed values all abort an install, and the registry refuses to serve an
+artifact whose bytes do not match its catalog digest.
+
+Published validation is **artifact-, identity-, and tag-bound**, not syntactic.
+`registry/published-releases.json` is immutable metadata for assets that
+actually exist on GitHub. For each published tag it records the exact catalog
+`name`, transform `version`, and release asset basename. The verifier requires:
+
+1. the selected name/version identifies exactly one live catalog entry;
+2. that entry's canonical GitHub `wasm_url` uses the published release tag and the
+   selected basename;
+3. the downloaded GitHub asset bytes equal the live catalog SHA-256 digest;
+4. every downloaded `*.wasm` belongs to that immutable manifest.
+
+The live catalog currently points all six released modules at the real v0.3.0
+assets. GitHub has no transform assets for v0.1.0 or v0.2.0, so no manifest or
+catalog URL claims otherwise.
+
+`registry/shipping.json` is deliberately separate from published history. It
+now contains an explicit `v0.4.0` CLI-only plan with an empty transform
+selection: the native CLI may be staged, but no current WASM bytes are claimed,
+rebuilt, or attached to the tag. Current branch builds must never be assigned
+to v0.3.0 or any earlier tag. The release workflow therefore fails before
+compilation unless:
+
+1. the pushed tag equals both the workspace and CLI versions, as reported by
+   `cargo metadata --locked --no-deps`, and
+2. that new tag has an explicit future shipping plan.
+
+A coordinated version bump and shipping-plan update are required before current
+source can be released.
+
+```bash
+make validate-registry            # structural / pre-artifact validation
+make validate-registry-digests    # advisory audit: which entries are still 'pending'?
+
+# Release builds require exactly rustc 1.85.1, the
+# x86_64-unknown-linux-gnu host, and Cargo.lock.
+make build-transforms-release
+
+# Verify the real public v0.3.0 downloads against the live catalog.
+make verify-published-registry
+
+# Current-source reproducibility is independent of published catalog history.
+make check-reproducible-wasm
+
+make validate-registry-controls          # hermetic positive/negative controls
+bash scripts/validate_registry_controls.sh --built-artifacts dist  # + real outputs
+bash scripts/e2e_publish_install.sh      # hermetic publish -> download -> install check
+```
+
+The canonical build environment is the pinned `linux/amd64` image also used by
+CI:
+
+```bash
+docker run --rm --platform linux/amd64 \
+  -v "$PWD:/work" -w /work \
+  -e CARGO_TARGET_DIR=/work/target/reproducible-release \
+  -e SOURCE_DATE_EPOCH=0 \
+  rust:1.85.1-bookworm@sha256:e51d0265072d2d9d5d320f6a44dde6b9ef13653b035098febd68cce8fa7c0bc4 \
+  bash -c 'rustup target add wasm32-wasip1 && bash scripts/check_reproducible_wasm.sh'
+```
+
+The builder rejects macOS, Linux ARM64, or any other host even when the rustc
+version matches. It also fixes `SOURCE_DATE_EPOCH`, disables incremental
+compilation, rejects ambient Rust flags, and remaps the checkout path to
+`/workspace`. Rust/LLVM host differences change these WASM bytes, so hashes must
+only be updated from the canonical amd64 Linux output.
+
+`.github/workflows/release.yml` checks `GITHUB_REF_NAME` against locked Cargo
+workspace/CLI metadata and requires `registry/shipping.json` to contain that
+future tag before target installation or compilation. CLI builds use
+`cargo build --locked`. If those preconditions are eventually met, only that
+tag's explicit future selection can enter `dist/`.
+
+`.github/workflows/ci.yml` additionally performs two clean builds in the pinned
+amd64 Linux container, using the same dedicated target path sequentially, and
+compares all six current-source modules byte-for-byte. That result is not used
+as historical catalog metadata. A separate job downloads the actual published
+v0.3.0 assets and verifies `registry/transforms.json` against their bytes.
+
+Published hashes are updated only after downloading the public release assets.
+Future build hashes belong in the future shipping process until those assets
+exist; they must not overwrite or masquerade as immutable published metadata.
+
 ## Development
 
 ### Prerequisites
 
-- Rust 1.75+
+- Rust 1.85+ for the full workspace (CLI and registry dependencies use Edition 2024 crates)
 - `wasm32-wasip1` target: `rustup target add wasm32-wasip1`
 
 ### Building
@@ -196,7 +317,7 @@ streamline-cli transforms deploy \
 cargo build --target wasm32-wasip1 --release
 
 # Build the CLI
-cargo build -p streamline-marketplace-cli
+cargo build --locked -p streamline-marketplace-cli
 
 # Run tests
 cargo test --workspace
@@ -237,4 +358,3 @@ Apache 2.0. See [LICENSE](LICENSE) for details.
 
 
 <!-- add connector development guide -->
-
